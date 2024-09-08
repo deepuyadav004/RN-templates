@@ -1,4 +1,4 @@
-import { View, Text } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import React from 'react'
 import { Tabs } from 'expo-router'
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -7,26 +7,44 @@ import Feather from '@expo/vector-icons/Feather';
 
 const appLayout = () => {
   return (
-    <Tabs screenOptions={{  tabBarActiveTintColor: 'blue' }}>
+    <Tabs screenOptions={{  tabBarActiveTintColor: 'blue', tabBarStyle:styles.bottomTabStyle }}  >
         <Tabs.Screen name="(Home)" options={{
             headerShown: false, 
             tabBarLabel: "Home", 
             title: "Home",
-            tabBarIcon: ({ color }) => <Ionicons size={28} name="home" color={color} />
+            tabBarIcon: ({ color }) => <Ionicons size={24} name="home" color={color} />
             }}/>
         <Tabs.Screen name="(Profile)" options={{
             headerShown: false, 
             tabBarLabel: "Profile", 
             title: "Profile",
-            tabBarIcon: ({ color }) => <FontAwesome size={28} name="user" color={color} />
+            tabBarIcon: ({ color }) => <FontAwesome size={24} name="user" color={color} />
             }} />
         <Tabs.Screen name="(Settings)" options={{headerShown: false, 
             tabBarLabel: "Settings", 
             title: "Settings",
-            tabBarIcon: ({ color }) => <Feather size={28} name="settings" color={color} />
+            tabBarIcon: ({ color }) => <Feather size={24} name="settings" color={color} />
             }} />
     </Tabs>
   )
 }
 
 export default appLayout
+
+const styles = StyleSheet.create({
+  bottomTabStyle: {
+    borderRadius: 30,
+    shadowOpacity: 0,
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    right: 10,
+    backgroundColor: '#ffffff',
+    shadowColor: '#ffffff',
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 3.5,
+    borderWidth: 1,
+    borderColor: '#ffffff',
+    opacity: 0.8,
+  }
+})
