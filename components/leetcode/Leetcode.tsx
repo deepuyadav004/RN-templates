@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
-import { Stack } from 'expo-router'
 
-
-const _layout = () => {
+const Leetcode = () => {
   return (
-    <Stack screenOptions={{headerShown: false}} />
+    <View>
+      <Text>Leetcode</Text>
+    </View>
   )
 }
 
-export default _layout
+export default Leetcode
 
 const styles = StyleSheet.create({})

@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
-import { Stack } from 'expo-router'
 
-
-const _layout = () => {
+const Codechef = () => {
   return (
-    <Stack screenOptions={{headerShown: false}} />
+    <View>
+      <Text>Codechef</Text>
+    </View>
   )
 }
 
-export default _layout
+export default Codechef
 
 const styles = StyleSheet.create({})

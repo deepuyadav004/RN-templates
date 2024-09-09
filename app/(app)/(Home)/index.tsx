@@ -1,13 +1,18 @@
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity  } from 'react-native'
 import React, { useState } from 'react'
 import { Colors } from '@/constants/Colors'
+import { Stack } from 'expo-router'
+import Codechef from '@/components/codechef/Codechef'
+import Codeforces from '@/components/codeforces/Codeforces'
+import Leetcode from '@/components/leetcode/Leetcode'
 
 const index = () => {
 
   const [headerValue, setHeaderValue] = useState("Codeforces")
 
   return (
-    <View>
+    <View >
+      
       <View style={styles.headerContainer} >
         <TouchableOpacity style={ headerValue==="Codeforces" ? styles.btnSelected : styles.btnNotSelected} onPress={() => setHeaderValue("Codeforces")} >
           <Text style={ headerValue==="Codeforces" ? styles.txtSelected : styles.txtNotSelected } >Codeforces</Text>
@@ -23,11 +28,13 @@ const index = () => {
       </View>
 
       <View>
-        <ScrollView>
-          <Text>item1</Text>
-          <Text>item1</Text>
-          <Text>item1</Text>
-        </ScrollView>
+        
+      {
+        headerValue === "Codeforces" ? <Codeforces /> : (
+          headerValue === "Leetcode" ? <Leetcode /> : <Codechef />
+        )
+      }
+
       </View>
     </View>
   )
@@ -41,7 +48,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 8,
     alignItems: 'center',
-    alignSelf: 'center'
+    alignSelf: 'center',
+    marginTop: 40
   },
   btnSelected: {
     backgroundColor: Colors.CORAL,
