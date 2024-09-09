@@ -40,12 +40,10 @@ const styles = StyleSheet.create({
     bottom: 10,
     left: 10,
     right: 10,
-    backgroundColor: '#ffffff',
-    shadowColor: '#ffffff',
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 3.5,
+    backgroundColor: Colors.WHITE,
+    shadowColor: Colors.WHITE,
     borderWidth: 1,
-    borderColor: '#ffffff',
-    opacity: 0.8,
+    borderColor: Colors.WHITE,
+    opacity: 0.7,
   }
 })
