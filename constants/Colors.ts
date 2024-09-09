@@ -25,4 +25,5 @@ export const Colors = {
   },
   DARK_GREEN: '#006A4E',
   WHITE: '#ffffff',
+  CORAL: 'coral'
 };
