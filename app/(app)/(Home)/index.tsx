@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity  } from 'react-native'
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, ImageBackground  } from 'react-native'
 import React, { useState } from 'react'
 import { Colors } from '@/constants/Colors'
 import { Stack } from 'expo-router'
@@ -11,31 +11,38 @@ const index = () => {
   const [headerValue, setHeaderValue] = useState("Codeforces")
 
   return (
-    <View >
+    <View style={styles.container}>
+      <ImageBackground
+        source={require('../../../assets/images/bgCfSection.png')}
+        style={styles.backgroundImage}
+      >
+
+        <View style={styles.headerContainer} >
+          <TouchableOpacity style={ headerValue==="Codeforces" ? styles.btnSelected : styles.btnNotSelected} onPress={() => setHeaderValue("Codeforces")} >
+            <Text style={ headerValue==="Codeforces" ? styles.txtSelected : styles.txtNotSelected } >Codeforces</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={ headerValue==="Leetcode" ? styles.btnSelected : styles.btnNotSelected} onPress={()=>setHeaderValue("Leetcode")} >
+            <Text style={ headerValue==="Leetcode" ? styles.txtSelected : styles.txtNotSelected } >Leetcode</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={ headerValue==="Codechef" ? styles.btnSelected : styles.btnNotSelected} onPress={() => setHeaderValue("Codechef")} >
+            <Text style={ headerValue==="Codechef" ? styles.txtSelected : styles.txtNotSelected } >Codechef</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View>
+          
+        {
+          headerValue === "Codeforces" ? <Codeforces /> : (
+            headerValue === "Leetcode" ? <Leetcode /> : <Codechef />
+          )
+        }
+
+        </View>
+      </ImageBackground>
       
-      <View style={styles.headerContainer} >
-        <TouchableOpacity style={ headerValue==="Codeforces" ? styles.btnSelected : styles.btnNotSelected} onPress={() => setHeaderValue("Codeforces")} >
-          <Text style={ headerValue==="Codeforces" ? styles.txtSelected : styles.txtNotSelected } >Codeforces</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={ headerValue==="Leetcode" ? styles.btnSelected : styles.btnNotSelected} onPress={()=>setHeaderValue("Leetcode")} >
-          <Text style={ headerValue==="Leetcode" ? styles.txtSelected : styles.txtNotSelected } >Leetcode</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={ headerValue==="Codechef" ? styles.btnSelected : styles.btnNotSelected} onPress={() => setHeaderValue("Codechef")} >
-          <Text style={ headerValue==="Codechef" ? styles.txtSelected : styles.txtNotSelected } >Codechef</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View>
-        
-      {
-        headerValue === "Codeforces" ? <Codeforces /> : (
-          headerValue === "Leetcode" ? <Leetcode /> : <Codechef />
-        )
-      }
-
-      </View>
+      
     </View>
   )
 }
@@ -74,5 +81,12 @@ const styles = StyleSheet.create({
   },
   txtNotSelected: {
     fontWeight: 'bold',
-  }
+  },
+  container: {
+    width: '100%',
+    height: '100%'
+  },
+  backgroundImage: {
+    flex: 1,
+  },
 })
