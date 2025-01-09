@@ -5,7 +5,7 @@ import { Stack } from 'expo-router'
 const rootLayout = () => {
   return (
    <Stack>
-        <Stack.Screen name='(app)' options={{ headerShown: false }} />
+        <Stack.Screen name='(Welcome)' options={{ headerShown: false }} />
    </Stack>
   )
 }
