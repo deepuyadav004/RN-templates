@@ -1,89 +1,162 @@
-import { ScrollView, StyleSheet, Text, View, ImageBackground, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
+import { 
+  ScrollView, 
+  Text, 
+  View, 
+  ImageBackground, 
+  TextInput, 
+  TouchableOpacity, 
+  ActivityIndicator, 
+  Alert,
+  Modal,
+  Pressable
+} from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Colors } from '@/constants/Colors'
 import RatingCard from '@/components/ratingCard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { STORAGE_KEYS, PLATFORM_DATA, UI, SAMPLE_DATA, API } from '@/constants/AppConstants'
+import { Feather } from '@expo/vector-icons'
+import { homeStyles } from './styles'
 
-const USERNAMES_STORAGE_KEY = 'platform_usernames'
+interface CodeforcesUserInfo {
+  handle: string;
+  rating: number;
+  maxRating: number;
+  rank: string;
+  maxRank: string;
+  titlePhoto: string;
+}
 
 const index = () => {
-  // State for tracking if usernames are set
   const [usernamesSet, setUsernamesSet] = useState(false)
   const [loading, setLoading] = useState(true)
   
-  // Form state for usernames
   const [codeforcesUsername, setCodeforcesUsername] = useState('')
   const [leetcodeUsername, setLeetcodeUsername] = useState('')
   const [codechefUsername, setCodechefUsername] = useState('')
   
-  // Sample data for rating cards (will be replaced with real data later)
   const [ratingsData, setRatingsData] = useState({
     codeforces: {
-      platformName: "Codeforces",
+      platformName: PLATFORM_DATA.CODEFORCES.PLATFORM_NAME,
       rating: 0,
       username: "",
       maxRating: 0,
       rank: "",
-      backgroundColor: '#E9F5FE',
-      textColor: '#4285F4',
-      logoUri: "https://codeforces.org/s/0/favicon-32x32.png"
+      backgroundColor: PLATFORM_DATA.CODEFORCES.BACKGROUND_COLOR,
+      textColor: PLATFORM_DATA.CODEFORCES.TEXT_COLOR,
+      logoUri: PLATFORM_DATA.CODEFORCES.LOGO_URI
     },
     leetcode: {
-      platformName: "LeetCode",
+      platformName: PLATFORM_DATA.LEETCODE.PLATFORM_NAME,
       rating: 0,
       username: "",
       maxRating: 0,
       rank: "",
-      backgroundColor: '#FFF4E6',
-      textColor: '#FFA116',
-      logoUri: "https://leetcode.com/static/images/LeetCode_logo_rvs.png"
+      backgroundColor: PLATFORM_DATA.LEETCODE.BACKGROUND_COLOR,
+      textColor: PLATFORM_DATA.LEETCODE.TEXT_COLOR,
+      logoUri: PLATFORM_DATA.LEETCODE.LOGO_URI
     },
     codechef: {
-      platformName: "CodeChef",
+      platformName: PLATFORM_DATA.CODECHEF.PLATFORM_NAME,
       rating: 0,
       username: "",
       maxRating: 0,
       rank: "",
-      backgroundColor: '#F1F8E9',
-      textColor: '#7E8D64',
-      logoUri: "https://cdn.codechef.com/images/cc-logo.svg"
+      backgroundColor: PLATFORM_DATA.CODECHEF.BACKGROUND_COLOR,
+      textColor: PLATFORM_DATA.CODECHEF.TEXT_COLOR,
+      logoUri: PLATFORM_DATA.CODECHEF.LOGO_URI
     }
   })
 
-  // Check if usernames are already set
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editCodeforcesUsername, setEditCodeforcesUsername] = useState('');
+  const [editLeetcodeUsername, setEditLeetcodeUsername] = useState('');
+  const [editCodechefUsername, setEditCodechefUsername] = useState('');
+
+  const fetchCodeforcesUserInfo = async (username: string) => {
+    try {
+      const response = await fetch(`${API.CODEFORCES.USER_INFO}?handles=${username}`);
+      const data = await response.json();
+      
+      if (data.status === "OK" && data.result.length > 0) {
+        const userInfo = data.result[0];
+        return {
+          handle: userInfo.handle,
+          rating: userInfo.rating || 0,
+          maxRating: userInfo.maxRating || 0,
+          rank: userInfo.rank || "",
+          maxRank: userInfo.maxRank || "",
+          titlePhoto: userInfo.titlePhoto || "",
+        };
+      }
+      throw new Error("Failed to fetch Codeforces user info");
+    } catch (error) {
+      console.error("Error fetching Codeforces user info:", error);
+      return null;
+    }
+  };
+  
+  const updateCodeforcesData = async (username: string) => {
+    const userInfo = await fetchCodeforcesUserInfo(username);
+    
+    if (userInfo) {
+      setRatingsData(prev => ({
+        ...prev,
+        codeforces: {
+          ...prev.codeforces,
+          username: userInfo.handle,
+          rating: userInfo.rating,
+          maxRating: userInfo.maxRating,
+          rank: userInfo.rank.charAt(0).toUpperCase() + userInfo.rank.slice(1),
+        }
+      }));
+      return true;
+    }
+    return false;
+  };
+
   useEffect(() => {
     const checkUsernames = async () => {
       try {
-        const storedUsernames = await AsyncStorage.getItem(USERNAMES_STORAGE_KEY)
+        const storedUsernames = await AsyncStorage.getItem(STORAGE_KEYS.USERNAMES)
         if (storedUsernames) {
           const usernames = JSON.parse(storedUsernames)
           
-          // Update the ratings data with stored usernames
           setRatingsData(prev => ({
             codeforces: {
               ...prev.codeforces,
               username: usernames.codeforces,
-              rating: 1432, // Sample data, would be fetched from API
-              maxRating: 1523,
-              rank: "Specialist"
             },
             leetcode: {
               ...prev.leetcode,
               username: usernames.leetcode,
-              rating: 1845,
-              maxRating: 1910,
-              rank: "Guardian"
+              rating: SAMPLE_DATA.LEETCODE.RATING,
+              maxRating: SAMPLE_DATA.LEETCODE.MAX_RATING,
+              rank: SAMPLE_DATA.LEETCODE.RANK
             },
             codechef: {
               ...prev.codechef,
               username: usernames.codechef,
-              rating: 1692,
-              maxRating: 1720,
-              rank: "3★"
+              rating: SAMPLE_DATA.CODECHEF.RATING,
+              maxRating: SAMPLE_DATA.CODECHEF.MAX_RATING,
+              rank: SAMPLE_DATA.CODECHEF.RANK
             }
-          }))
+          }));
           
-          setUsernamesSet(true)
+          const success = await updateCodeforcesData(usernames.codeforces);
+          if (!success) {
+            setRatingsData(prev => ({
+              ...prev,
+              codeforces: {
+                ...prev.codeforces,
+                rating: SAMPLE_DATA.CODEFORCES.RATING,
+                maxRating: SAMPLE_DATA.CODEFORCES.MAX_RATING,
+                rank: SAMPLE_DATA.CODEFORCES.RANK
+              }
+            }));
+          }
+          
+          setUsernamesSet(true);
         }
       } catch (error) {
         console.error('Error loading usernames:', error)
@@ -95,7 +168,14 @@ const index = () => {
     checkUsernames()
   }, [])
 
-  // Save usernames and set the state
+  useEffect(() => {
+    if (editModalVisible && usernamesSet) {
+      setEditCodeforcesUsername(ratingsData.codeforces.username);
+      setEditLeetcodeUsername(ratingsData.leetcode.username);
+      setEditCodechefUsername(ratingsData.codechef.username);
+    }
+  }, [editModalVisible]);
+
   const handleSaveUsernames = async () => {
     if (!codeforcesUsername || !leetcodeUsername || !codechefUsername) {
       Alert.alert("Missing Information", "Please enter usernames for all platforms.")
@@ -110,34 +190,43 @@ const index = () => {
         codechef: codechefUsername
       }
       
-      await AsyncStorage.setItem(USERNAMES_STORAGE_KEY, JSON.stringify(usernames))
+      await AsyncStorage.setItem(STORAGE_KEYS.USERNAMES, JSON.stringify(usernames))
       
-      // Update the ratings data with the new usernames
       setRatingsData(prev => ({
         codeforces: {
           ...prev.codeforces,
           username: usernames.codeforces,
-          rating: 1432, // Sample data, would be fetched from API
-          maxRating: 1523,
-          rank: "Specialist"
         },
         leetcode: {
           ...prev.leetcode,
           username: usernames.leetcode,
-          rating: 1845,
-          maxRating: 1910,
-          rank: "Guardian"
+          rating: SAMPLE_DATA.LEETCODE.RATING,
+          maxRating: SAMPLE_DATA.LEETCODE.MAX_RATING,
+          rank: SAMPLE_DATA.LEETCODE.RANK
         },
         codechef: {
           ...prev.codechef,
           username: usernames.codechef,
-          rating: 1692,
-          maxRating: 1720,
-          rank: "3★"
+          rating: SAMPLE_DATA.CODECHEF.RATING,
+          maxRating: SAMPLE_DATA.CODECHEF.MAX_RATING,
+          rank: SAMPLE_DATA.CODECHEF.RANK
         }
-      }))
+      }));
       
-      setUsernamesSet(true)
+      const success = await updateCodeforcesData(usernames.codeforces);
+      if (!success) {
+        setRatingsData(prev => ({
+          ...prev,
+          codeforces: {
+            ...prev.codeforces,
+            rating: SAMPLE_DATA.CODEFORCES.RATING,
+            maxRating: SAMPLE_DATA.CODEFORCES.MAX_RATING,
+            rank: SAMPLE_DATA.CODEFORCES.RANK
+          }
+        }));
+      }
+      
+      setUsernamesSet(true);
     } catch (error) {
       console.error('Error saving usernames:', error)
       Alert.alert("Error", "Failed to save usernames. Please try again.")
@@ -146,58 +235,122 @@ const index = () => {
     }
   }
 
-  // Render loading state
+  const handleUpdateUsernames = async () => {
+    if (!editCodeforcesUsername || !editLeetcodeUsername || !editCodechefUsername) {
+      Alert.alert("Missing Information", "Please enter usernames for all platforms.");
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const usernames = {
+        codeforces: editCodeforcesUsername,
+        leetcode: editLeetcodeUsername,
+        codechef: editCodechefUsername
+      };
+      
+      await AsyncStorage.setItem(STORAGE_KEYS.USERNAMES, JSON.stringify(usernames));
+      
+      setRatingsData(prev => ({
+        codeforces: {
+          ...prev.codeforces,
+          username: usernames.codeforces,
+        },
+        leetcode: {
+          ...prev.leetcode,
+          username: usernames.leetcode,
+          rating: SAMPLE_DATA.LEETCODE.RATING,
+          maxRating: SAMPLE_DATA.LEETCODE.MAX_RATING,
+          rank: SAMPLE_DATA.LEETCODE.RANK
+        },
+        codechef: {
+          ...prev.codechef,
+          username: usernames.codechef,
+          rating: SAMPLE_DATA.CODECHEF.RATING,
+          maxRating: SAMPLE_DATA.CODECHEF.MAX_RATING,
+          rank: SAMPLE_DATA.CODECHEF.RANK
+        }
+      }));
+      
+      const success = await updateCodeforcesData(usernames.codeforces);
+      if (!success) {
+        setRatingsData(prev => ({
+          ...prev,
+          codeforces: {
+            ...prev.codeforces,
+            rating: SAMPLE_DATA.CODEFORCES.RATING,
+            maxRating: SAMPLE_DATA.CODEFORCES.MAX_RATING,
+            rank: SAMPLE_DATA.CODEFORCES.RANK
+          }
+        }));
+      }
+      
+      setEditModalVisible(false);
+      Alert.alert("Success", "Your usernames have been updated successfully.");
+    } catch (error) {
+      console.error('Error updating usernames:', error);
+      Alert.alert("Error", "Failed to update usernames. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={homeStyles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.CORAL} />
-        <Text style={styles.loadingText}>Loading your profile...</Text>
+        <Text style={homeStyles.loadingText}>Loading your profile...</Text>
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
+    <View style={homeStyles.container}>
       <ImageBackground
         source={require('../../../assets/images/bgCfSection.png')}
-        style={styles.backgroundImage}
+        style={homeStyles.backgroundImage}
       >
         <ScrollView 
           showsVerticalScrollIndicator={false} 
-          style={styles.mainScrollContainer}
-          contentContainerStyle={styles.mainScrollContentContainer}
+          style={homeStyles.mainScrollContainer}
+          contentContainerStyle={homeStyles.mainScrollContentContainer}
         >
           {usernamesSet ? (
-            // Content when usernames are set
             <>
-              <View style={styles.contentContainer}>
-                <Text style={styles.welcomeText}>Welcome to Coding Stats</Text>
-                <View style={styles.divider} />
-                <Text style={styles.subText}>Your platform ratings at a glance</Text>
+              <View style={homeStyles.contentContainer}>
+                <Text style={homeStyles.welcomeText}>Welcome to Coding Stats</Text>
+                <View style={homeStyles.divider} />
+                <Text style={homeStyles.subText}>Track Your Competitive Programming Journey</Text>
+                <TouchableOpacity 
+                  style={homeStyles.editButton}
+                  onPress={() => setEditModalVisible(true)}
+                >
+                  <Feather name="edit-2" size={UI.ICONS.SIZE.SMALL} color={Colors.WHITE} />
+                  <Text style={homeStyles.editButtonText}>Edit Usernames</Text>
+                </TouchableOpacity>
               </View>
 
-              <View style={styles.cardContainer}>
+              <View style={homeStyles.cardContainer}>
                 <RatingCard {...ratingsData.codeforces} />
               </View>
-              <View style={styles.cardContainer}>
+              <View style={homeStyles.cardContainer}>
                 <RatingCard {...ratingsData.leetcode} />
               </View>
-              <View style={styles.cardContainer}>
+              <View style={homeStyles.cardContainer}>
                 <RatingCard {...ratingsData.codechef} />
               </View>
             </>
           ) : (
-            // Form when usernames need to be collected
-            <View style={styles.formContainer}>
-              <Text style={styles.formTitle}>Welcome to Coding Stats!</Text>
-              <Text style={styles.formSubtitle}>
+            <View style={homeStyles.formContainer}>
+              <Text style={homeStyles.formTitle}>Welcome to Coding Stats!</Text>
+              <Text style={homeStyles.formSubtitle}>
                 Please enter your usernames for the following platforms to get started.
               </Text>
               
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Codeforces Username</Text>
+              <View style={homeStyles.inputContainer}>
+                <Text style={homeStyles.inputLabel}>Codeforces Username</Text>
                 <TextInput
-                  style={styles.input}
+                  style={homeStyles.input}
                   value={codeforcesUsername}
                   onChangeText={setCodeforcesUsername}
                   placeholder="Enter your Codeforces username"
@@ -205,10 +358,10 @@ const index = () => {
                 />
               </View>
               
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>LeetCode Username</Text>
+              <View style={homeStyles.inputContainer}>
+                <Text style={homeStyles.inputLabel}>LeetCode Username</Text>
                 <TextInput
-                  style={styles.input}
+                  style={homeStyles.input}
                   value={leetcodeUsername}
                   onChangeText={setLeetcodeUsername}
                   placeholder="Enter your LeetCode username"
@@ -216,10 +369,10 @@ const index = () => {
                 />
               </View>
               
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>CodeChef Username</Text>
+              <View style={homeStyles.inputContainer}>
+                <Text style={homeStyles.inputLabel}>CodeChef Username</Text>
                 <TextInput
-                  style={styles.input}
+                  style={homeStyles.input}
                   value={codechefUsername}
                   onChangeText={setCodechefUsername}
                   placeholder="Enter your CodeChef username"
@@ -227,149 +380,89 @@ const index = () => {
                 />
               </View>
               
-              <TouchableOpacity style={styles.saveButton} onPress={handleSaveUsernames}>
-                <Text style={styles.saveButtonText}>Save & Continue</Text>
+              <TouchableOpacity style={homeStyles.saveButton} onPress={handleSaveUsernames}>
+                <Text style={homeStyles.saveButtonText}>Save & Continue</Text>
               </TouchableOpacity>
             </View>
           )}
         </ScrollView>
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={editModalVisible}
+          onRequestClose={() => setEditModalVisible(false)}
+        >
+          <Pressable 
+            style={homeStyles.modalOverlay} 
+            onPress={() => setEditModalVisible(false)}
+          >
+            <Pressable style={homeStyles.modalContent} onPress={e => e.stopPropagation()}>
+              <View style={homeStyles.modalHeader}>
+                <Text style={homeStyles.modalTitle}>Edit Your Usernames</Text>
+                <TouchableOpacity 
+                  style={homeStyles.closeButton}
+                  onPress={() => setEditModalVisible(false)}
+                >
+                  <Feather name="x" size={UI.ICONS.SIZE.MEDIUM} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={homeStyles.modalDivider} />
+              
+              <View style={homeStyles.inputContainer}>
+                <Text style={homeStyles.inputLabel}>Codeforces Username</Text>
+                <TextInput
+                  style={homeStyles.input}
+                  value={editCodeforcesUsername}
+                  onChangeText={setEditCodeforcesUsername}
+                  placeholder="Enter your Codeforces username"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              
+              <View style={homeStyles.inputContainer}>
+                <Text style={homeStyles.inputLabel}>LeetCode Username</Text>
+                <TextInput
+                  style={homeStyles.input}
+                  value={editLeetcodeUsername}
+                  onChangeText={setEditLeetcodeUsername}
+                  placeholder="Enter your LeetCode username"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              
+              <View style={homeStyles.inputContainer}>
+                <Text style={homeStyles.inputLabel}>CodeChef Username</Text>
+                <TextInput
+                  style={homeStyles.input}
+                  value={editCodechefUsername}
+                  onChangeText={setEditCodechefUsername}
+                  placeholder="Enter your CodeChef username"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              
+              <View style={homeStyles.modalFooter}>
+                <TouchableOpacity 
+                  style={homeStyles.cancelButton}
+                  onPress={() => setEditModalVisible(false)}
+                >
+                  <Text style={homeStyles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={homeStyles.updateButton}
+                  onPress={handleUpdateUsernames}
+                >
+                  <Text style={homeStyles.updateButtonText}>Update</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </ImageBackground>
     </View>
   )
 }
 
 export default index
-
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    height: '100%'
-  },
-  backgroundImage: {
-    flex: 1,
-  },
-  mainScrollContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  mainScrollContentContainer: {
-    paddingBottom: 90, // Extra padding to account for tab bar
-    alignItems: 'center'
-  },
-  contentContainer: {
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    marginTop: 50,
-    marginBottom: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 25,
-    paddingVertical: 25,
-  },
-  welcomeText: {
-    fontSize: 30,
-    fontFamily: 'Gudea-Bold',
-    color: Colors.WHITE,
-    textAlign: 'center',
-    marginBottom: 15,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
-  },
-  divider: {
-    height: 2,
-    width: 60,
-    backgroundColor: Colors.CORAL,
-    marginBottom: 15,
-    borderRadius: 2,
-  },
-  subText: {
-    fontSize: 18,
-    fontFamily: 'Gudea-Regular',
-    color: Colors.WHITE,
-    textAlign: 'center',
-    opacity: 0.9,
-  },
-  cardContainer: {
-    width: '100%',
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.27,
-    shadowRadius: 4.65,
-    elevation: 6,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: '#333',
-    fontFamily: 'Gudea-Regular',
-  },
-  formContainer: {
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 15,
-    padding: 20,
-    marginTop: 50,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.27,
-    shadowRadius: 4.65,
-    elevation: 6,
-  },
-  formTitle: {
-    fontSize: 24,
-    fontFamily: 'Gudea-Bold',
-    color: Colors.DARK_GREEN,
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  formSubtitle: {
-    fontSize: 16,
-    fontFamily: 'Gudea-Regular',
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 25,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontFamily: 'Gudea-Bold',
-    color: '#444',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    fontFamily: 'Gudea-Regular',
-  },
-  saveButton: {
-    backgroundColor: Colors.CORAL,
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  saveButtonText: {
-    color: Colors.WHITE,
-    fontSize: 18,
-    fontFamily: 'Gudea-Bold',
-  },
-})
