@@ -44,7 +44,9 @@ const index = () => {
       rank: "",
       backgroundColor: PLATFORM_DATA.CODEFORCES.BACKGROUND_COLOR,
       textColor: PLATFORM_DATA.CODEFORCES.TEXT_COLOR,
-      logoUri: PLATFORM_DATA.CODEFORCES.LOGO_URI
+      logoUri: PLATFORM_DATA.CODEFORCES.LOGO_URI,
+      isError: false,
+      errorMessage: ""
     },
     leetcode: {
       platformName: PLATFORM_DATA.LEETCODE.PLATFORM_NAME,
@@ -97,22 +99,52 @@ const index = () => {
   };
   
   const updateCodeforcesData = async (username: string) => {
-    const userInfo = await fetchCodeforcesUserInfo(username);
-    
-    if (userInfo) {
+    try {
+      const userInfo = await fetchCodeforcesUserInfo(username);
+      
+      if (userInfo) {
+        setRatingsData(prev => ({
+          ...prev,
+          codeforces: {
+            ...prev.codeforces,
+            username: userInfo.handle,
+            rating: userInfo.rating,
+            maxRating: userInfo.maxRating,
+            rank: userInfo.rank.charAt(0).toUpperCase() + userInfo.rank.slice(1), // Capitalize first letter
+            isError: false
+          }
+        }));
+        return true;
+      } else {
+        // Handle invalid username case
+        setRatingsData(prev => ({
+          ...prev,
+          codeforces: {
+            ...prev.codeforces,
+            username: username, // Keep the entered username to show in error card
+            rating: 0,
+            maxRating: 0,
+            rank: "Invalid",
+            isError: true,
+            errorMessage: "Username not found on Codeforces"
+          }
+        }));
+        return false;
+      }
+    } catch (error) {
+      console.error("Error in updateCodeforcesData:", error);
+      // Set error state with appropriate message
       setRatingsData(prev => ({
         ...prev,
         codeforces: {
           ...prev.codeforces,
-          username: userInfo.handle,
-          rating: userInfo.rating,
-          maxRating: userInfo.maxRating,
-          rank: userInfo.rank.charAt(0).toUpperCase() + userInfo.rank.slice(1),
+          username: username,
+          isError: true,
+          errorMessage: "Failed to fetch Codeforces data. Please try again later."
         }
       }));
-      return true;
+      return false;
     }
-    return false;
   };
 
   useEffect(() => {

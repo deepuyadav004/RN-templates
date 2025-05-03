@@ -1,12 +1,20 @@
-import { StyleSheet, Text, View, Image, Dimensions } from 'react-native'
+import { Text, View, Image } from 'react-native'
 import React from 'react'
 import { Colors } from '@/constants/Colors';
-
-const { width, height } = Dimensions.get('window');
+import { Feather } from '@expo/vector-icons';
+import { userBasicInfoStyles as styles } from './styles';
 
 const UserBasicInfo = ({userInfo}) => {
   if(userInfo === null || userInfo === undefined || (userInfo?.status === 'FAILED')){
-    return <Text>Failed to retrieve info</Text>
+    return (
+      <View style={styles.errorContainer}>
+        <Feather name="alert-circle" size={40} color="#d32f2f" style={styles.errorIcon} />
+        <Text style={styles.errorText}>Invalid Username</Text>
+        <Text style={styles.errorSubText}>
+          We couldn't find this user on Codeforces. Please check the username and try again.
+        </Text>
+      </View>
+    );
   }
   
   return (
@@ -31,55 +39,19 @@ const UserBasicInfo = ({userInfo}) => {
       </View>
 
       <View>
-
-      <Image 
-            source={{uri: userInfo.result[0].titlePhoto}}
-            resizeMode = 'stretch'
-            style={styles.imgStyle}
-      />
-
+        <Image 
+              source={{uri: userInfo.result[0].titlePhoto}}
+              resizeMode = 'stretch'
+              style={styles.imgStyle}
+        />
       </View>
       
-      <View className='infoContainer'>
+      <View style={styles.infoContainer}>
         {userInfo?.result[0]?.handle && <Text>Username: {userInfo?.result[0]?.handle}</Text>}
-
         {userInfo?.result[0]?.firstName && <Text>Name: {userInfo?.result[0]?.firstName} {userInfo?.result[0]?.lastName}</Text>}
-        
       </View>
     </View>
   )
 }
 
 export default UserBasicInfo
-
-const styles = StyleSheet.create({
-    imgStyle: {
-        width: 200,
-        height: 200
-    },
-    container: {
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        // backgroundColor: 'black',
-        paddingTop: 8,
-    },
-    infoContainer: {
-
-    },
-    titleContainer: {
-      display: 'flex',
-      flexDirection: 'row',
-    },
-    titleTxt: {
-      fontSize: width*0.08,
-      fontFamily: 'Gudea-Bold',
-      color: Colors.LIGHT_GOLD
-    },
-    ratingTxt: {
-      fontSize: width*0.05,
-      fontFamily: 'Gudea-Italic',
-      color: Colors.WHITE,
-      paddingBottom: 8
-    }
-})
