@@ -1,16 +1,9 @@
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, ImageBackground  } from 'react-native'
-import React, { useState } from 'react'
+import { ScrollView, StyleSheet, Text, View, ImageBackground } from 'react-native'
+import React from 'react'
 import { Colors } from '@/constants/Colors'
-import { Stack } from 'expo-router'
-import Codechef from '@/components/codechef/Codechef'
-import Codeforces from '@/components/codeforces/Codeforces'
-import Leetcode from '@/components/leetcode/Leetcode'
 import RatingCard from '@/components/ratingCard'
 
 const index = () => {
-
-  const [headerValue, setHeaderValue] = useState("Codeforces")
-
   // Sample data for rating cards
   const ratingsData = {
     codeforces: {
@@ -51,34 +44,23 @@ const index = () => {
         source={require('../../../assets/images/bgCfSection.png')}
         style={styles.backgroundImage}
       >
-        <View style={styles.headerContainer} >
-          <TouchableOpacity style={ headerValue==="Codeforces" ? styles.btnSelected : styles.btnNotSelected} onPress={() => setHeaderValue("Codeforces")} >
-            <Text style={ headerValue==="Codeforces" ? styles.txtSelected : styles.txtNotSelected } >Codeforces</Text>
-          </TouchableOpacity>
+        {/* Move everything inside a single ScrollView */}
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          style={styles.mainScrollContainer}
+          contentContainerStyle={styles.mainScrollContentContainer}
+        >
+          {/* Header content */}
+          <View style={styles.contentContainer}>
+            <Text style={styles.welcomeText}>Welcome to Coding Stats</Text>
+            <Text style={styles.subText}>Here are your current platform ratings</Text>
+          </View>
 
-          <TouchableOpacity style={ headerValue==="Leetcode" ? styles.btnSelected : styles.btnNotSelected} onPress={()=>setHeaderValue("Leetcode")} >
-            <Text style={ headerValue==="Leetcode" ? styles.txtSelected : styles.txtNotSelected } >Leetcode</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={ headerValue==="Codechef" ? styles.btnSelected : styles.btnNotSelected} onPress={() => setHeaderValue("Codechef")} >
-            <Text style={ headerValue==="Codechef" ? styles.txtSelected : styles.txtNotSelected } >Codechef</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Rating Cards Section */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardsContainer}>
+          {/* Rating Cards */}
           <RatingCard {...ratingsData.codeforces} />
           <RatingCard {...ratingsData.leetcode} />
           <RatingCard {...ratingsData.codechef} />
         </ScrollView>
-
-        <View>
-        {
-          headerValue === "Codeforces" ? <Codeforces /> : (
-            headerValue === "Leetcode" ? <Leetcode /> : <Codechef />
-          )
-        }
-        </View>
       </ImageBackground>
     </View>
   )
@@ -87,44 +69,6 @@ const index = () => {
 export default index
 
 const styles = StyleSheet.create({
-  cardsContainer: {
-    paddingVertical: 15,
-    marginBottom: 10,
-  },
-  headerContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 40
-  },
-  btnSelected: {
-    backgroundColor: Colors.CORAL,
-    padding: 8,
-    borderRadius: 20,
-    margin: 8,
-    width: 95,
-    alignItems: 'center'
-  },
-  txtSelected: {
-    color: Colors.WHITE,
-    // fontWeight: 'bold',
-    fontFamily: 'Gudea-Bold'
-  },
-  btnNotSelected: {
-    padding: 8,
-    borderRadius: 20,
-    margin: 8,
-    backgroundColor: Colors.WHITE,
-    borderWidth: 1,
-    width: 95,
-    alignItems: 'center'
-  },
-  txtNotSelected: {
-    // fontWeight: 'bold',
-    fontFamily: 'Gudea-Italic'
-  },
   container: {
     width: '100%',
     height: '100%'
@@ -132,4 +76,45 @@ const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
   },
+  mainScrollContainer: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  mainScrollContentContainer: {
+    paddingBottom: 20,
+    alignItems: 'center'
+  },
+  contentContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    marginTop: 40,
+    marginBottom: 10
+  },
+  welcomeText: {
+    fontSize: 28,
+    fontFamily: 'Gudea-Bold',
+    color: Colors.WHITE,
+    textAlign: 'center',
+    marginBottom: 10
+  },
+  subText: {
+    fontSize: 18,
+    fontFamily: 'Gudea-Regular',
+    color: Colors.WHITE,
+    textAlign: 'center',
+    marginBottom: 10
+  },
+  cardsOuterContainer: {
+    height: 230, // Fixed container height
+    marginBottom: 20,
+  },
+  cardsContainer: {
+    paddingHorizontal: 10,
+    flex: 1,
+  },
+  cardsContentContainer: {
+    paddingBottom: 20,
+    alignItems: 'center'
+  }
 })
