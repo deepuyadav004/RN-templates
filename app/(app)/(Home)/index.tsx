@@ -5,10 +5,45 @@ import { Stack } from 'expo-router'
 import Codechef from '@/components/codechef/Codechef'
 import Codeforces from '@/components/codeforces/Codeforces'
 import Leetcode from '@/components/leetcode/Leetcode'
+import RatingCard from '@/components/ratingCard'
 
 const index = () => {
 
   const [headerValue, setHeaderValue] = useState("Codeforces")
+
+  // Sample data for rating cards
+  const ratingsData = {
+    codeforces: {
+      platformName: "Codeforces",
+      rating: 1432,
+      username: "xeroin",
+      maxRating: 1523,
+      rank: "Specialist",
+      backgroundColor: '#E9F5FE',
+      textColor: '#4285F4',
+      logoUri: "https://codeforces.org/s/0/favicon-32x32.png"
+    },
+    leetcode: {
+      platformName: "LeetCode",
+      rating: 1845,
+      username: "coder123",
+      maxRating: 1910,
+      rank: "Guardian",
+      backgroundColor: '#FFF4E6',
+      textColor: '#FFA116',
+      logoUri: "https://leetcode.com/static/images/LeetCode_logo_rvs.png"
+    },
+    codechef: {
+      platformName: "CodeChef",
+      rating: 1692,
+      username: "chef_coder",
+      maxRating: 1720,
+      rank: "3★",
+      backgroundColor: '#F1F8E9',
+      textColor: '#7E8D64',
+      logoUri: "https://cdn.codechef.com/images/cc-logo.svg"
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -16,7 +51,6 @@ const index = () => {
         source={require('../../../assets/images/bgCfSection.png')}
         style={styles.backgroundImage}
       >
-
         <View style={styles.headerContainer} >
           <TouchableOpacity style={ headerValue==="Codeforces" ? styles.btnSelected : styles.btnNotSelected} onPress={() => setHeaderValue("Codeforces")} >
             <Text style={ headerValue==="Codeforces" ? styles.txtSelected : styles.txtNotSelected } >Codeforces</Text>
@@ -31,18 +65,21 @@ const index = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Rating Cards Section */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardsContainer}>
+          <RatingCard {...ratingsData.codeforces} />
+          <RatingCard {...ratingsData.leetcode} />
+          <RatingCard {...ratingsData.codechef} />
+        </ScrollView>
+
         <View>
-          
         {
           headerValue === "Codeforces" ? <Codeforces /> : (
             headerValue === "Leetcode" ? <Leetcode /> : <Codechef />
           )
         }
-
         </View>
       </ImageBackground>
-      
-      
     </View>
   )
 }
@@ -50,6 +87,10 @@ const index = () => {
 export default index
 
 const styles = StyleSheet.create({
+  cardsContainer: {
+    paddingVertical: 15,
+    marginBottom: 10,
+  },
   headerContainer: {
     display: 'flex',
     flexDirection: 'row',
@@ -63,12 +104,13 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
     margin: 8,
-    width: 90,
+    width: 95,
     alignItems: 'center'
   },
   txtSelected: {
     color: Colors.WHITE,
-    fontWeight: 'bold'
+    // fontWeight: 'bold',
+    fontFamily: 'Gudea-Bold'
   },
   btnNotSelected: {
     padding: 8,
@@ -76,11 +118,12 @@ const styles = StyleSheet.create({
     margin: 8,
     backgroundColor: Colors.WHITE,
     borderWidth: 1,
-    width: 90,
+    width: 95,
     alignItems: 'center'
   },
   txtNotSelected: {
-    fontWeight: 'bold',
+    // fontWeight: 'bold',
+    fontFamily: 'Gudea-Italic'
   },
   container: {
     width: '100%',
