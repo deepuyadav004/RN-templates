@@ -1,22 +1,22 @@
 import { 
   ScrollView, 
-  Text, 
   View, 
   ImageBackground, 
-  TextInput, 
-  TouchableOpacity, 
   ActivityIndicator, 
-  Alert,
+  Text,
   Modal,
-  Pressable
+  Pressable,
+  Alert,
+  TouchableOpacity
 } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Colors } from '@/constants/Colors'
-import RatingCard from '@/components/ratingCard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { STORAGE_KEYS, PLATFORM_DATA, UI, SAMPLE_DATA, API } from '@/constants/AppConstants'
 import { Feather } from '@expo/vector-icons'
 import { homeStyles } from './styles'
+import UserInfoForm from '@/components/forms/UserInfoForm'
+import PlatformCards from '@/components/cards/PlatformCards'
 
 interface CodeforcesUserInfo {
   handle: string;
@@ -348,74 +348,20 @@ const index = () => {
           contentContainerStyle={homeStyles.mainScrollContentContainer}
         >
           {usernamesSet ? (
-            <>
-              <View style={homeStyles.contentContainer}>
-                <Text style={homeStyles.welcomeText}>Welcome to Coding Stats</Text>
-                <View style={homeStyles.divider} />
-                <Text style={homeStyles.subText}>Track Your Competitive Programming Journey</Text>
-                <TouchableOpacity 
-                  style={homeStyles.editButton}
-                  onPress={() => setEditModalVisible(true)}
-                >
-                  <Feather name="edit-2" size={UI.ICONS.SIZE.SMALL} color={Colors.WHITE} />
-                  <Text style={homeStyles.editButtonText}>Edit Usernames</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={homeStyles.cardContainer}>
-                <RatingCard {...ratingsData.codeforces} />
-              </View>
-              <View style={homeStyles.cardContainer}>
-                <RatingCard {...ratingsData.leetcode} />
-              </View>
-              <View style={homeStyles.cardContainer}>
-                <RatingCard {...ratingsData.codechef} />
-              </View>
-            </>
+            <PlatformCards 
+              ratingsData={ratingsData} 
+              onEditPress={() => setEditModalVisible(true)}
+            />
           ) : (
-            <View style={homeStyles.formContainer}>
-              <Text style={homeStyles.formTitle}>Welcome to Coding Stats!</Text>
-              <Text style={homeStyles.formSubtitle}>
-                Please enter your usernames for the following platforms to get started.
-              </Text>
-              
-              <View style={homeStyles.inputContainer}>
-                <Text style={homeStyles.inputLabel}>Codeforces Username</Text>
-                <TextInput
-                  style={homeStyles.input}
-                  value={codeforcesUsername}
-                  onChangeText={setCodeforcesUsername}
-                  placeholder="Enter your Codeforces username"
-                  placeholderTextColor="#999"
-                />
-              </View>
-              
-              <View style={homeStyles.inputContainer}>
-                <Text style={homeStyles.inputLabel}>LeetCode Username</Text>
-                <TextInput
-                  style={homeStyles.input}
-                  value={leetcodeUsername}
-                  onChangeText={setLeetcodeUsername}
-                  placeholder="Enter your LeetCode username"
-                  placeholderTextColor="#999"
-                />
-              </View>
-              
-              <View style={homeStyles.inputContainer}>
-                <Text style={homeStyles.inputLabel}>CodeChef Username</Text>
-                <TextInput
-                  style={homeStyles.input}
-                  value={codechefUsername}
-                  onChangeText={setCodechefUsername}
-                  placeholder="Enter your CodeChef username"
-                  placeholderTextColor="#999"
-                />
-              </View>
-              
-              <TouchableOpacity style={homeStyles.saveButton} onPress={handleSaveUsernames}>
-                <Text style={homeStyles.saveButtonText}>Save & Continue</Text>
-              </TouchableOpacity>
-            </View>
+            <UserInfoForm
+              codeforcesUsername={codeforcesUsername}
+              setCodeforcesUsername={setCodeforcesUsername}
+              leetcodeUsername={leetcodeUsername}
+              setLeetcodeUsername={setLeetcodeUsername}
+              codechefUsername={codechefUsername}
+              setCodechefUsername={setCodechefUsername}
+              onSubmit={handleSaveUsernames}
+            />
           )}
         </ScrollView>
 
@@ -442,53 +388,15 @@ const index = () => {
 
               <View style={homeStyles.modalDivider} />
               
-              <View style={homeStyles.inputContainer}>
-                <Text style={homeStyles.inputLabel}>Codeforces Username</Text>
-                <TextInput
-                  style={homeStyles.input}
-                  value={editCodeforcesUsername}
-                  onChangeText={setEditCodeforcesUsername}
-                  placeholder="Enter your Codeforces username"
-                  placeholderTextColor="#999"
-                />
-              </View>
-              
-              <View style={homeStyles.inputContainer}>
-                <Text style={homeStyles.inputLabel}>LeetCode Username</Text>
-                <TextInput
-                  style={homeStyles.input}
-                  value={editLeetcodeUsername}
-                  onChangeText={setEditLeetcodeUsername}
-                  placeholder="Enter your LeetCode username"
-                  placeholderTextColor="#999"
-                />
-              </View>
-              
-              <View style={homeStyles.inputContainer}>
-                <Text style={homeStyles.inputLabel}>CodeChef Username</Text>
-                <TextInput
-                  style={homeStyles.input}
-                  value={editCodechefUsername}
-                  onChangeText={setEditCodechefUsername}
-                  placeholder="Enter your CodeChef username"
-                  placeholderTextColor="#999"
-                />
-              </View>
-              
-              <View style={homeStyles.modalFooter}>
-                <TouchableOpacity 
-                  style={homeStyles.cancelButton}
-                  onPress={() => setEditModalVisible(false)}
-                >
-                  <Text style={homeStyles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={homeStyles.updateButton}
-                  onPress={handleUpdateUsernames}
-                >
-                  <Text style={homeStyles.updateButtonText}>Update</Text>
-                </TouchableOpacity>
-              </View>
+              <UserInfoForm
+                codeforcesUsername={editCodeforcesUsername}
+                setCodeforcesUsername={setEditCodeforcesUsername}
+                leetcodeUsername={editLeetcodeUsername}
+                setLeetcodeUsername={setEditLeetcodeUsername}
+                codechefUsername={editCodechefUsername}
+                setCodechefUsername={setEditCodechefUsername}
+                onSubmit={handleUpdateUsernames}
+              />
             </Pressable>
           </Pressable>
         </Modal>
