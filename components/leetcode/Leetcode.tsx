@@ -9,7 +9,8 @@ interface LeetcodeProps {
 const Leetcode: React.FC<LeetcodeProps> = ({ userName }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.message}>Detailed profile information is available on LeetCode website.</Text>
+      <View style={styles.content}>
+      </View>
     </View>
   );
 }
@@ -30,5 +31,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     padding: 10,
     borderRadius: 8,
+  },
+  header: {
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.primary,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   }
 });

@@ -9,7 +9,7 @@ interface CodechefProps {
 const Codechef: React.FC<CodechefProps> = ({ userName }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.message}>Detailed profile information is available on CodeChef website.</Text>
+      {/* Removed "CodeChef Profile" heading */}
     </View>
   );
 }
@@ -20,6 +20,14 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     alignItems: 'center',
+  },
+  header: {
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.primary,
   },
   message: {
     fontSize: 14,

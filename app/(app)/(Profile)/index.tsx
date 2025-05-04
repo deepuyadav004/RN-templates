@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, ImageBackground } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, ImageBackground, Animated, Dimensions } from 'react-native'
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '@/constants/Colors'
@@ -29,6 +29,62 @@ interface CodechefAPIResponse {
 const CODECHEF_CACHE_KEY = 'cached_codechef_data';
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000;
 
+// Create a shared animated value for the header
+const headerScrollY = new Animated.Value(0);
+const headerShowAnimation = new Animated.Value(1);
+
+// Get screen width for nav indicator animations
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const TAB_WIDTH = SCREEN_WIDTH / 3;
+
+// Create a shared scroll handler that can be used by all sections
+const createScrollHandler = () => {
+  const lastScrollY = { current: 0 };
+  const scrollDirection = { current: 0 };
+
+  return Animated.event(
+    [{ nativeEvent: { contentOffset: { y: headerScrollY } } }],
+    {
+      useNativeDriver: true,
+      listener: (event) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y;
+        if (currentScrollY <= 0) {
+          // At the top - always show header
+          Animated.timing(headerShowAnimation, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true
+          }).start();
+        } else if (currentScrollY < lastScrollY.current) {
+          // Scrolling up - show header
+          if (scrollDirection.current !== 1) {
+            scrollDirection.current = 1;
+            Animated.timing(headerShowAnimation, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true
+            }).start();
+          }
+        } else if (currentScrollY > lastScrollY.current) {
+          // Scrolling down - hide header after threshold
+          if (scrollDirection.current !== -1 && currentScrollY > 100) {
+            scrollDirection.current = -1;
+            Animated.timing(headerShowAnimation, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true
+            }).start();
+          }
+        }
+        lastScrollY.current = currentScrollY;
+      }
+    }
+  );
+};
+
+// Shared scroll handler that all sections can use
+const sharedScrollHandler = createScrollHandler();
+
 const CodechefSection = ({ userData, ratingsData, latestCodechefData }) => {
   const codechefRatingData = useMemo(() => {
     if (!ratingsData?.codechef) {
@@ -52,13 +108,17 @@ const CodechefSection = ({ userData, ratingsData, latestCodechefData }) => {
     };
   }, [ratingsData?.codechef, latestCodechefData, userData.codechef]);
 
-  const heatmapKey = useMemo(() => 
-    `codechef-activity-${userData.codechef || 'default'}-${Date.now()}`, 
+  const heatmapKey = useMemo(() =>
+    `codechef-activity-${userData.codechef || 'default'}-${Date.now()}`,
     [userData.codechef]
   );
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <Animated.ScrollView
+      showsVerticalScrollIndicator={false}
+      onScroll={sharedScrollHandler}
+      scrollEventThrottle={16}
+    >
       <View style={styles.platformContainer}>
         {userData.codechef && (
           <Codechef userName={userData.codechef} />
@@ -80,7 +140,7 @@ const CodechefSection = ({ userData, ratingsData, latestCodechefData }) => {
           />
         )}
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 };
 
@@ -99,17 +159,46 @@ const index = () => {
   const [codechefTabVisited, setCodechefTabVisited] = useState(false);
   const [codechefSectionKey, setCodechefSectionKey] = useState(Date.now());
 
+  const headerTranslateY = headerScrollY.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: [0, -25, -50],
+    extrapolate: 'clamp'
+  });
+
+  const headerTransform = [
+    { translateY: Animated.multiply(headerTranslateY, headerShowAnimation) }
+  ];
+
+  // Add animation for tab indicator
+  const tabIndicatorPosition = useMemo(() => {
+    const platforms = ['Codeforces', 'Leetcode', 'Codechef'];
+    const index = platforms.indexOf(headerValue);
+    return new Animated.Value(index * (TAB_WIDTH));
+  }, []);
+
+  // Update tab indicator position when headerValue changes
+  useEffect(() => {
+    const platforms = ['Codeforces', 'Leetcode', 'Codechef'];
+    const index = platforms.indexOf(headerValue);
+    Animated.spring(tabIndicatorPosition, {
+      toValue: index * (TAB_WIDTH),
+      useNativeDriver: true,
+      friction: 8,
+      tension: 300
+    }).start();
+  }, [headerValue]);
+
   const loadCachedCodechefData = useCallback(async (username: string) => {
     try {
       const cachedData = await AsyncStorage.getItem(`${CODECHEF_CACHE_KEY}_${username}`);
       if (cachedData) {
         const parsedData = JSON.parse(cachedData) as CodechefAPIResponse;
-        
+
         const now = Date.now();
         if (parsedData.cachedAt && now - parsedData.cachedAt < CACHE_EXPIRY) {
           console.log('Using cached CodeChef data for:', username);
           setLatestCodechefData(parsedData);
-          
+
           if (ratingsData?.codechef) {
             const updatedRatingsData = {
               ...ratingsData,
@@ -122,7 +211,7 @@ const index = () => {
             };
             setRatingsData(updatedRatingsData);
           }
-          
+
           return true;
         } else {
           console.log('Cached CodeChef data expired for:', username);
@@ -142,9 +231,9 @@ const index = () => {
         ...data,
         cachedAt: Date.now()
       };
-      
+
       await AsyncStorage.setItem(
-        `${CODECHEF_CACHE_KEY}_${username}`, 
+        `${CODECHEF_CACHE_KEY}_${username}`,
         JSON.stringify(dataToCache)
       );
       console.log('Cached CodeChef data for:', username);
@@ -155,10 +244,10 @@ const index = () => {
 
   const fetchLatestCodechefData = useCallback(async (username: string, forceRefresh = false) => {
     if (!username || (isFetchingCodechef.current && !forceRefresh)) return;
-    
+
     try {
       isFetchingCodechef.current = true;
-      
+
       if (!forceRefresh) {
         const cacheUsed = await loadCachedCodechefData(username);
         if (cacheUsed) {
@@ -166,28 +255,28 @@ const index = () => {
           return;
         }
       }
-      
+
       console.log('Fetching CodeChef data for:', username);
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
-      
+
       try {
         const response = await fetch(`https://codechef-api.vercel.app/handle/${username}`, {
           signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
           throw new Error(`API returned status ${response.status}`);
         }
-        
+
         const data = await response.json();
 
         if (data && data.success) {
           setLatestCodechefData(data);
-          
+
           cacheCodechefData(username, data);
 
           if (ratingsData?.codechef) {
@@ -211,7 +300,7 @@ const index = () => {
       }
     } catch (error) {
       console.error('Error fetching latest CodeChef data:', error);
-      
+
       if (!latestCodechefData && ratingsData?.codechef) {
         setLatestCodechefData({
           success: true,
@@ -384,7 +473,11 @@ const index = () => {
 
   const renderCodeforcesSection = () => {
     return (
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={sharedScrollHandler}
+        scrollEventThrottle={16}
+      >
         <View style={styles.platformContainer}>
           {userData.codeforces && (
             <Codeforces userName={userData.codeforces} />
@@ -392,7 +485,7 @@ const index = () => {
 
           <View style={styles.cardContainer}>
             <View style={styles.sectionTitleContainer}>
-              <Text style={styles.sectionTitle}>Current Rating</Text>
+              <Text style={styles.sectionTitle}>Performance Stats</Text>
             </View>
             {ratingsData && ratingsData.codeforces ? (
               <RatingCard {...ratingsData.codeforces} />
@@ -417,18 +510,22 @@ const index = () => {
             <CodeforcesProblemDifficulty username={userData.codeforces} />
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     );
   };
 
   const renderLeetcodeSection = () => {
     return (
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={sharedScrollHandler}
+        scrollEventThrottle={16}
+      >
         <View style={styles.platformContainer}>
           {userData.leetcode && (
             <Leetcode userName={userData.leetcode} />
           )}
-          
+
           <View style={styles.cardContainer}>
             <View style={styles.sectionTitleContainer}>
               <Text style={styles.sectionTitle}>Performance Stats</Text>
@@ -443,32 +540,29 @@ const index = () => {
               </View>
             )}
           </View>
-          
-          {/* LeetCode Progress Rings component */}
+
           {userData.leetcode && (
-            <LeetCodeProgressRings 
+            <LeetCodeProgressRings
               key={`leetcode-rings-${userData.leetcode}`}
-              username={userData.leetcode} 
+              username={userData.leetcode}
             />
           )}
-          
-          {/* Add LeetCode Contest Chart component */}
+
           {userData.leetcode && (
-            <LeetCodeContestChart 
+            <LeetCodeContestChart
               key={`leetcode-contest-${userData.leetcode}`}
-              username={userData.leetcode} 
+              username={userData.leetcode}
             />
           )}
-          
-          {/* Add LeetCode Skill Stats component */}
+
           {userData.leetcode && (
-            <LeetCodeSkillStats 
+            <LeetCodeSkillStats
               key={`leetcode-skills-${userData.leetcode}`}
-              username={userData.leetcode} 
+              username={userData.leetcode}
             />
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     );
   };
 
@@ -479,26 +573,57 @@ const index = () => {
         style={styles.backgroundImage}
       >
         <View style={styles.overlay}>
-          <View style={styles.headerContainer}>
-            {['Codeforces', 'Leetcode', 'Codechef'].map((platform) => (
-              <TouchableOpacity
-                key={platform}
-                style={[
-                  styles.navButton,
-                  headerValue === platform ? styles.btnSelected : styles.btnNotSelected
-                ]}
-                onPress={() => setHeaderValue(platform)}
-              >
-                <Text
-                  style={headerValue === platform ? styles.txtSelected : styles.txtNotSelected}
+          <Animated.View
+            style={[
+              styles.headerContainer,
+              {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 1000,
+                transform: headerTransform,
+                opacity: headerShowAnimation,
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                paddingTop: 50,
+                paddingBottom: 10,
+                borderBottomRightRadius: 20,
+                borderBottomLeftRadius: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 5,
+                elevation: 5,
+              }
+            ]}
+          >
+            <View style={styles.navBarContainer}>
+              {['Codeforces', 'Leetcode', 'Codechef'].map((platform) => (
+                <TouchableOpacity
+                  key={platform}
+                  style={styles.navTab}
+                  onPress={() => setHeaderValue(platform)}
                 >
-                  {platform}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  <Text
+                    style={[
+                      styles.navTabText,
+                      headerValue === platform && styles.navTabTextActive
+                    ]}
+                  >
+                    {platform}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <Animated.View 
+                style={[
+                  styles.tabIndicator, 
+                  { transform: [{ translateX: tabIndicatorPosition }] }
+                ]} 
+              />
+            </View>
+          </Animated.View>
 
-          <View style={styles.contentContainer}>
+          <View style={[styles.contentContainer, { paddingTop: 100 }]}>
             {headerValue === "Codeforces" && renderCodeforcesSection()}
             {headerValue === "Leetcode" && renderLeetcodeSection()}
             {headerValue === "Codechef" && (
@@ -520,40 +645,40 @@ export default index
 
 const styles = StyleSheet.create({
   headerContainer: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 50,
-    marginBottom: 20,
     paddingHorizontal: 15,
   },
-  navButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 25,
-    margin: 6,
-    elevation: 3,
-    minWidth: 100,
+  navBarContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    position: 'relative',
+    height: 50,
+  },
+  navTab: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    height: 50,
   },
-  btnSelected: {
-    backgroundColor: Colors.CORAL,
-    transform: [{ scale: 1.05 }],
-  },
-  txtSelected: {
-    color: Colors.WHITE,
-    fontFamily: 'Gudea-Bold',
-    fontSize: 16,
-  },
-  btnNotSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  txtNotSelected: {
+  navTabText: {
     fontFamily: 'Gudea-Regular',
-    color: Colors.DARK_GREEN,
-    fontSize: 15,
+    fontSize: 16,
+    color: '#757575',
+    textAlign: 'center',
+  },
+  navTabTextActive: {
+    fontFamily: 'Gudea-Bold',
+    color: Colors.CORAL,
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    width: TAB_WIDTH,
+    height: 3,
+    backgroundColor: Colors.CORAL,
+    borderRadius: 3,
   },
   container: {
     width: '100%',

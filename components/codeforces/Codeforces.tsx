@@ -9,7 +9,7 @@ interface CodeforcesProps {
 const Codeforces: React.FC<CodeforcesProps> = ({ userName }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.message}>Detailed profile information is available on Codeforces website.</Text>
+      {/* Removed "Codeforces Profile" heading */}
     </View>
   );
 }
