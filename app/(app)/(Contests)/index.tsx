@@ -23,8 +23,16 @@ interface CodechefContest {
   platform: 'codechef';
 }
 
+interface LeetcodeContest {
+  title: string;
+  startTime: number;
+  duration: number;
+  titleSlug: string;
+  platform: 'leetcode';
+}
+
 // Combined contest type for our display
-type Contest = CodeforcesContest | CodechefContest;
+type Contest = CodeforcesContest | CodechefContest | LeetcodeContest;
 
 const ContestsScreen = () => {
   const [contests, setContests] = useState<Contest[]>([]);
@@ -72,21 +80,71 @@ const ContestsScreen = () => {
     }
   };
 
+  const fetchLeetcode = async (): Promise<LeetcodeContest[]> => {
+    try {
+      const response = await fetch('https://leetcode.com/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: "query getContestList { allContests { title startTime duration titleSlug } }"
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.data && data.data.allContests) {
+        const now = Date.now() / 1000;
+        
+        // Filter only upcoming contests and add platform identifier
+        return data.data.allContests
+          .filter((contest: any) => contest.startTime > now)
+          .map((contest: any) => ({
+            ...contest,
+            platform: 'leetcode'
+          }));
+      }
+      return [];
+    } catch (err) {
+      console.error('Error fetching LeetCode contests:', err);
+      return [];
+    }
+  };
+
   const fetchAllContests = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch contests from both platforms in parallel
-      const [codeforcesContests, codechefContests] = await Promise.all([
+      // Fetch contests from all three platforms in parallel
+      const [codeforcesContests, codechefContests, leetcodeContests] = await Promise.all([
         fetchCodeforces(),
-        fetchCodechef()
+        fetchCodechef(),
+        fetchLeetcode()
       ]);
       
       // Combine and sort all contests by start time
-      const allContests = [...codeforcesContests, ...codechefContests].sort((a, b) => {
-        const timeA = a.platform === 'codeforces' ? a.startTimeSeconds : new Date(a.contest_start_date_iso).getTime() / 1000;
-        const timeB = b.platform === 'codeforces' ? b.startTimeSeconds : new Date(b.contest_start_date_iso).getTime() / 1000;
+      const allContests = [...codeforcesContests, ...codechefContests, ...leetcodeContests].sort((a, b) => {
+        let timeA: number;
+        let timeB: number;
+        
+        if (a.platform === 'codeforces') {
+          timeA = (a as CodeforcesContest).startTimeSeconds;
+        } else if (a.platform === 'codechef') {
+          timeA = new Date((a as CodechefContest).contest_start_date_iso).getTime() / 1000;
+        } else { // leetcode
+          timeA = (a as LeetcodeContest).startTime;
+        }
+        
+        if (b.platform === 'codeforces') {
+          timeB = (b as CodeforcesContest).startTimeSeconds;
+        } else if (b.platform === 'codechef') {
+          timeB = new Date((b as CodechefContest).contest_start_date_iso).getTime() / 1000;
+        } else { // leetcode
+          timeB = (b as LeetcodeContest).startTime;
+        }
+        
         return timeA - timeB;
       });
       
@@ -150,31 +208,47 @@ const ContestsScreen = () => {
   };
 
   const getPlatformColors = (platform: string) => {
-    return platform === 'codeforces' 
-      ? { badge: '#5D3FD3', countdown: 'rgba(93, 63, 211, 0.9)' }
-      : { badge: '#EC5B45', countdown: 'rgba(236, 91, 69, 0.9)' };
+    switch (platform) {
+      case 'codeforces':
+        return { badge: '#5D3FD3', countdown: 'rgba(93, 63, 211, 0.9)' };
+      case 'codechef':
+        return { badge: '#EC5B45', countdown: 'rgba(236, 91, 69, 0.9)' };
+      case 'leetcode':
+        return { badge: '#FFA116', countdown: 'rgba(255, 161, 22, 0.9)' };
+      default:
+        return { badge: '#5D3FD3', countdown: 'rgba(93, 63, 211, 0.9)' };
+    }
   };
 
   const renderContestItem = ({ item }: { item: Contest }) => {
-    const isCodeforces = item.platform === 'codeforces';
-    const colors = getPlatformColors(item.platform);
+    const platform = item.platform;
+    const colors = getPlatformColors(platform);
     
     // Get contest details based on platform
-    const contestName = isCodeforces 
-      ? (item as CodeforcesContest).name 
-      : (item as CodechefContest).contest_name;
-      
-    const contestType = isCodeforces 
-      ? (item as CodeforcesContest).type 
-      : 'CodeChef';
-      
-    const startTime = isCodeforces 
-      ? (item as CodeforcesContest).startTimeSeconds 
-      : new Date((item as CodechefContest).contest_start_date_iso).getTime() / 1000;
-      
-    const duration = isCodeforces 
-      ? (item as CodeforcesContest).durationSeconds 
-      : (item as CodechefContest).contest_duration;
+    let contestName: string;
+    let contestType: string;
+    let startTime: number;
+    let duration: number | string;
+    
+    if (platform === 'codeforces') {
+      const contest = item as CodeforcesContest;
+      contestName = contest.name;
+      contestType = contest.type;
+      startTime = contest.startTimeSeconds;
+      duration = contest.durationSeconds;
+    } else if (platform === 'codechef') {
+      const contest = item as CodechefContest;
+      contestName = contest.contest_name;
+      contestType = 'CodeChef';
+      startTime = new Date(contest.contest_start_date_iso).getTime() / 1000;
+      duration = contest.contest_duration;
+    } else { // leetcode
+      const contest = item as LeetcodeContest;
+      contestName = contest.title;
+      contestType = 'LeetCode';
+      startTime = contest.startTime;
+      duration = contest.duration;
+    }
     
     return (
       <TouchableOpacity style={styles.contestCard}>
@@ -188,9 +262,7 @@ const ContestsScreen = () => {
           <View style={styles.timeInfoItem}>
             <Ionicons name="calendar-outline" size={18} color={colors.badge} />
             <Text style={styles.timeInfoText}>
-              {isCodeforces 
-                ? formatStartTime((item as CodeforcesContest).startTimeSeconds) 
-                : formatStartTime((item as CodechefContest).contest_start_date_iso)}
+              {formatStartTime(startTime)}
             </Text>
           </View>
           
@@ -199,9 +271,9 @@ const ContestsScreen = () => {
           <View style={styles.timeInfoItem}>
             <Ionicons name="time-outline" size={18} color={colors.badge} />
             <Text style={styles.timeInfoText}>
-              {isCodeforces 
-                ? formatDuration((item as CodeforcesContest).durationSeconds) 
-                : formatDuration((item as CodechefContest).contest_duration, true)}
+              {platform === 'codechef' 
+                ? formatDuration(duration, true) 
+                : formatDuration(duration as number)}
             </Text>
           </View>
         </View>
@@ -247,11 +319,15 @@ const ContestsScreen = () => {
             <FlatList
               data={contests}
               renderItem={renderContestItem}
-              keyExtractor={(item) => 
-                item.platform === 'codeforces' 
-                  ? `cf-${(item as CodeforcesContest).id}` 
-                  : `cc-${(item as CodechefContest).contest_code}`
-              }
+              keyExtractor={(item) => {
+                if (item.platform === 'codeforces') {
+                  return `cf-${(item as CodeforcesContest).id}`;
+                } else if (item.platform === 'codechef') {
+                  return `cc-${(item as CodechefContest).contest_code}`;
+                } else { // leetcode
+                  return `lc-${(item as LeetcodeContest).titleSlug}`;
+                }
+              }}
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}
               refreshControl={
