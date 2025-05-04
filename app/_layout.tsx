@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet  } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Stack } from 'expo-router'
 import * as Font from 'expo-font';
 import { ActivityIndicator } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const rootLayout = () => {
 
@@ -31,9 +32,11 @@ const rootLayout = () => {
   }
 
   return (
-   <Stack>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack>
         <Stack.Screen name='(app)' options={{ headerShown: false }} />
-   </Stack>
+      </Stack>
+    </GestureHandlerRootView>
   )
 }
 

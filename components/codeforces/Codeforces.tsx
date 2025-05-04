@@ -1,31 +1,34 @@
-import { ScrollView, StyleSheet } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import getUserInfo from '@/api/codeforcesApis/getUserInfoByHandle';
-import UserBasicInfo from '@/components/cards/codeforcesCards/UserBasicInfo'
+import { View, StyleSheet, Text } from 'react-native'
+import React from 'react'
+import { Colors } from '@/constants/Colors';
 
-const Codeforces = () => {
-  
-  const userName = "xeroin";
-  const [userInfo, setUserInfo] = useState(null);
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      const info = await getUserInfo(userName).then((res) => setUserInfo(res));
-      // console.log(userInfo.status !== 'FAILED');
-    };
-
-    fetchUserInfo();
-  }, []);
-
-  return (
-    <ScrollView>
-      <UserBasicInfo userInfo={userInfo} />
-    </ScrollView>
-  )
+interface CodeforcesProps {
+  userName: string;
 }
 
-export default Codeforces
+const Codeforces: React.FC<CodeforcesProps> = ({ userName }) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.message}>Detailed profile information is available on Codeforces website.</Text>
+    </View>
+  );
+}
+
+export default Codeforces;
 
 const styles = StyleSheet.create({
-
-})
+  container: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  message: {
+    fontSize: 14,
+    fontFamily: 'Gudea-Italic',
+    color: '#666',
+    marginTop: 15,
+    textAlign: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    padding: 10,
+    borderRadius: 8,
+  }
+});
