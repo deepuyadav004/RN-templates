@@ -14,6 +14,7 @@ import CodeforcesProblemTags from '@/components/charts/CodeforcesProblemTags';
 import CodeforcesProblemDifficulty from '@/components/charts/CodeforcesProblemDifficulty';
 import CodechefActivityHeatmap from '@/components/charts/CodechefActivityHeatmap';
 import LeetCodeProgressRings from '@/components/charts/LeetCodeProgressRings';
+import LeetCodeContestChart from '@/components/charts/LeetCodeContestChart';
 
 interface CodechefAPIResponse {
   success: boolean;
@@ -442,10 +443,18 @@ const index = () => {
             )}
           </View>
           
-          {/* Add LeetCode Progress Rings component with key for proper remounting */}
+          {/* LeetCode Progress Rings component */}
           {userData.leetcode && (
             <LeetCodeProgressRings 
               key={`leetcode-rings-${userData.leetcode}`}
+              username={userData.leetcode} 
+            />
+          )}
+          
+          {/* Add LeetCode Contest Chart component */}
+          {userData.leetcode && (
+            <LeetCodeContestChart 
+              key={`leetcode-contest-${userData.leetcode}`}
               username={userData.leetcode} 
             />
           )}

@@ -244,6 +244,62 @@ const LeetCodeProgressRings: React.FC<LeetCodeProgressRingsProps> = ({ username 
           <Text style={styles.additionalStatValue}>{stats.reputation}</Text>
         </View>
       </View>
+      
+      <View style={styles.detailedStatsCard}>
+        <Text style={styles.detailedStatsTitle}>LeetCode Profile Statistics</Text>
+        
+        <View style={styles.detailedStatRow}>
+          <View style={styles.detailedStatItem}>
+            <View style={styles.statIconContainer}>
+              <View style={[styles.statIcon, { backgroundColor: Colors.CORAL }]}>
+                <Text style={styles.statIconText}>🏆</Text>
+              </View>
+            </View>
+            <View style={styles.statTextContainer}>
+              <Text style={styles.statLabel}>Global Ranking</Text>
+              <Text style={styles.statValue}>{stats.ranking.toLocaleString()}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.detailedStatItem}>
+            <View style={styles.statIconContainer}>
+              <View style={[styles.statIcon, { backgroundColor: '#4CAF50' }]}>
+                <Text style={styles.statIconText}>✓</Text>
+              </View>
+            </View>
+            <View style={styles.statTextContainer}>
+              <Text style={styles.statLabel}>Acceptance Rate</Text>
+              <Text style={styles.statValue}>{stats.acceptanceRate}%</Text>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.detailedStatRow}>
+          <View style={styles.detailedStatItem}>
+            <View style={styles.statIconContainer}>
+              <View style={[styles.statIcon, { backgroundColor: '#2196F3' }]}>
+                <Text style={styles.statIconText}>⭐</Text>
+              </View>
+            </View>
+            <View style={styles.statTextContainer}>
+              <Text style={styles.statLabel}>Contribution Points</Text>
+              <Text style={styles.statValue}>{stats.contributionPoints.toLocaleString()}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.detailedStatItem}>
+            <View style={styles.statIconContainer}>
+              <View style={[styles.statIcon, { backgroundColor: '#9C27B0' }]}>
+                <Text style={styles.statIconText}>👑</Text>
+              </View>
+            </View>
+            <View style={styles.statTextContainer}>
+              <Text style={styles.statLabel}>Reputation</Text>
+              <Text style={styles.statValue}>{stats.reputation.toLocaleString()}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
     </View>
   );
 };
@@ -356,6 +412,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.03)',
     padding: 15,
     borderRadius: 10,
+    marginBottom: 20,
   },
   additionalStatItem: {
     alignItems: 'center',
@@ -370,6 +427,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Gudea-Bold',
     color: Colors.CORAL,
+  },
+  detailedStatsCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  detailedStatsTitle: {
+    fontSize: 16,
+    fontFamily: 'Gudea-Bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 15,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  detailedStatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  detailedStatItem: {
+    flexDirection: 'row',
+    width: '48%',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderRadius: 10,
+    padding: 10,
+  },
+  statIconContainer: {
+    marginRight: 10,
+    justifyContent: 'center',
+  },
+  statIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statIconText: {
+    fontSize: 16,
+    color: 'white',
+  },
+  statTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontFamily: 'Gudea-Regular',
+    color: '#777',
+  },
+  statValue: {
+    fontSize: 15,
+    fontFamily: 'Gudea-Bold',
+    color: '#333',
   },
 });
 
