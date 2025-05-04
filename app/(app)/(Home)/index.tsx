@@ -17,6 +17,7 @@ import { Feather } from '@expo/vector-icons'
 import { homeStyles } from './styles'
 import UserInfoForm from '@/components/forms/UserInfoForm'
 import PlatformCards from '@/components/cards/PlatformCards'
+import getUserContestInfo from '@/api/leetcodeApis/getLCUserInfoByHandle'
 
 interface CodeforcesUserInfo {
   handle: string;
@@ -25,6 +26,14 @@ interface CodeforcesUserInfo {
   rank: string;
   maxRank: string;
   titlePhoto: string;
+}
+
+interface LeetcodeUserInfo {
+  username: string;
+  rating: number;
+  badge: string;
+  globalRanking: number;
+  totalParticipants: number;
 }
 
 const index = () => {
@@ -56,7 +65,9 @@ const index = () => {
       rank: "",
       backgroundColor: PLATFORM_DATA.LEETCODE.BACKGROUND_COLOR,
       textColor: PLATFORM_DATA.LEETCODE.TEXT_COLOR,
-      logoUri: PLATFORM_DATA.LEETCODE.LOGO_URI
+      logoUri: PLATFORM_DATA.LEETCODE.LOGO_URI,
+      isError: false,
+      errorMessage: ""
     },
     codechef: {
       platformName: PLATFORM_DATA.CODECHEF.PLATFORM_NAME,
@@ -97,6 +108,26 @@ const index = () => {
       return null;
     }
   };
+
+  const fetchLeetcodeUserInfo = async (username: string) => {
+    try {
+      const data = await getUserContestInfo(username);
+      
+      if (data && data.contestRating) {
+        return {
+          username: username,
+          rating: data.contestRating,
+          badge: data.contestBadges?.name || "",
+          globalRanking: data.contestGlobalRanking,
+          totalParticipants: data.totalParticipants
+        };
+      }
+      throw new Error("Failed to fetch Leetcode user info");
+    } catch (error) {
+      console.error("Error fetching Leetcode user info:", error);
+      return null;
+    }
+  };
   
   const updateCodeforcesData = async (username: string) => {
     try {
@@ -111,7 +142,8 @@ const index = () => {
             rating: userInfo.rating,
             maxRating: userInfo.maxRating,
             rank: userInfo.rank.charAt(0).toUpperCase() + userInfo.rank.slice(1), // Capitalize first letter
-            isError: false
+            isError: false,
+            errorMessage: ""
           }
         }));
         return true;
@@ -147,6 +179,58 @@ const index = () => {
     }
   };
 
+  const updateLeetcodeData = async (username: string) => {
+    try {
+      const userInfo = await fetchLeetcodeUserInfo(username);
+      
+      if (userInfo) {
+        setRatingsData(prev => ({
+          ...prev,
+          leetcode: {
+            ...prev.leetcode,
+            username: userInfo.username,
+            rating: Math.floor(userInfo.rating), // Use Math.floor to remove decimal part
+            maxRating: 0, // Set to 0 to hide max rating for LeetCode
+            rank: userInfo.badge || "User",
+            isError: false,
+            errorMessage: ""
+          }
+        }));
+        return true;
+      } else {
+        // Handle invalid username case
+        setRatingsData(prev => ({
+          ...prev,
+          leetcode: {
+            ...prev.leetcode,
+            username: username,
+            rating: 0,
+            maxRating: 0, // Make sure to set maxRating to 0 for invalid users
+            rank: "Invalid",
+            isError: true,
+            errorMessage: "Username not found on Leetcode"
+          }
+        }));
+        return false;
+      }
+    } catch (error) {
+      console.error("Error in updateLeetcodeData:", error);
+      // Set error state with appropriate message
+      setRatingsData(prev => ({
+        ...prev,
+        leetcode: {
+          ...prev.leetcode,
+          username: username,
+          rating: 0,
+          maxRating: 0, // Make sure to set maxRating to 0 for error cases
+          isError: true,
+          errorMessage: "Failed to fetch Leetcode data. Please try again later."
+        }
+      }));
+      return false;
+    }
+  };
+
   useEffect(() => {
     const checkUsernames = async () => {
       try {
@@ -162,9 +246,6 @@ const index = () => {
             leetcode: {
               ...prev.leetcode,
               username: usernames.leetcode,
-              rating: SAMPLE_DATA.LEETCODE.RATING,
-              maxRating: SAMPLE_DATA.LEETCODE.MAX_RATING,
-              rank: SAMPLE_DATA.LEETCODE.RANK
             },
             codechef: {
               ...prev.codechef,
@@ -175,8 +256,9 @@ const index = () => {
             }
           }));
           
-          const success = await updateCodeforcesData(usernames.codeforces);
-          if (!success) {
+          // Fetch Codeforces data
+          const cfSuccess = await updateCodeforcesData(usernames.codeforces);
+          if (!cfSuccess) {
             setRatingsData(prev => ({
               ...prev,
               codeforces: {
@@ -184,6 +266,20 @@ const index = () => {
                 rating: SAMPLE_DATA.CODEFORCES.RATING,
                 maxRating: SAMPLE_DATA.CODEFORCES.MAX_RATING,
                 rank: SAMPLE_DATA.CODEFORCES.RANK
+              }
+            }));
+          }
+          
+          // Fetch Leetcode data
+          const lcSuccess = await updateLeetcodeData(usernames.leetcode);
+          if (!lcSuccess) {
+            setRatingsData(prev => ({
+              ...prev,
+              leetcode: {
+                ...prev.leetcode,
+                rating: SAMPLE_DATA.LEETCODE.RATING,
+                maxRating: 0, // Set to 0 to hide max rating for LeetCode
+                rank: SAMPLE_DATA.LEETCODE.RANK
               }
             }));
           }
@@ -232,9 +328,6 @@ const index = () => {
         leetcode: {
           ...prev.leetcode,
           username: usernames.leetcode,
-          rating: SAMPLE_DATA.LEETCODE.RATING,
-          maxRating: SAMPLE_DATA.LEETCODE.MAX_RATING,
-          rank: SAMPLE_DATA.LEETCODE.RANK
         },
         codechef: {
           ...prev.codechef,
@@ -245,8 +338,9 @@ const index = () => {
         }
       }));
       
-      const success = await updateCodeforcesData(usernames.codeforces);
-      if (!success) {
+      // Fetch Codeforces data
+      const cfSuccess = await updateCodeforcesData(usernames.codeforces);
+      if (!cfSuccess) {
         setRatingsData(prev => ({
           ...prev,
           codeforces: {
@@ -254,6 +348,20 @@ const index = () => {
             rating: SAMPLE_DATA.CODEFORCES.RATING,
             maxRating: SAMPLE_DATA.CODEFORCES.MAX_RATING,
             rank: SAMPLE_DATA.CODEFORCES.RANK
+          }
+        }));
+      }
+      
+      // Fetch Leetcode data
+      const lcSuccess = await updateLeetcodeData(usernames.leetcode);
+      if (!lcSuccess) {
+        setRatingsData(prev => ({
+          ...prev,
+          leetcode: {
+            ...prev.leetcode,
+            rating: SAMPLE_DATA.LEETCODE.RATING,
+            maxRating: 0, // Set to 0 to hide max rating for LeetCode
+            rank: SAMPLE_DATA.LEETCODE.RANK
           }
         }));
       }
@@ -291,9 +399,6 @@ const index = () => {
         leetcode: {
           ...prev.leetcode,
           username: usernames.leetcode,
-          rating: SAMPLE_DATA.LEETCODE.RATING,
-          maxRating: SAMPLE_DATA.LEETCODE.MAX_RATING,
-          rank: SAMPLE_DATA.LEETCODE.RANK
         },
         codechef: {
           ...prev.codechef,
@@ -304,8 +409,9 @@ const index = () => {
         }
       }));
       
-      const success = await updateCodeforcesData(usernames.codeforces);
-      if (!success) {
+      // Fetch Codeforces data
+      const cfSuccess = await updateCodeforcesData(usernames.codeforces);
+      if (!cfSuccess) {
         setRatingsData(prev => ({
           ...prev,
           codeforces: {
@@ -313,6 +419,20 @@ const index = () => {
             rating: SAMPLE_DATA.CODEFORCES.RATING,
             maxRating: SAMPLE_DATA.CODEFORCES.MAX_RATING,
             rank: SAMPLE_DATA.CODEFORCES.RANK
+          }
+        }));
+      }
+      
+      // Fetch Leetcode data
+      const lcSuccess = await updateLeetcodeData(usernames.leetcode);
+      if (!lcSuccess) {
+        setRatingsData(prev => ({
+          ...prev,
+          leetcode: {
+            ...prev.leetcode,
+            rating: SAMPLE_DATA.LEETCODE.RATING,
+            maxRating: 0, // Set to 0 to hide max rating for LeetCode
+            rank: SAMPLE_DATA.LEETCODE.RANK
           }
         }));
       }

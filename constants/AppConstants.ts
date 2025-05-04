@@ -32,6 +32,10 @@ export const API = {
   },
   LEETCODE: {
     USER_INFO: 'https://alfa-leetcode-api.onrender.com',
+    CONTEST_INFO: 'https://alfa-leetcode-api.onrender.com/{username}/contest',
+    HEADERS: {
+      'x-rapidapi-host': 'leetcode-api.p.rapidapi.com'
+    }
   },
   // Add other platform APIs here
 };

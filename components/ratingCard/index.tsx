@@ -48,7 +48,7 @@ const RatingCard = ({
 
         <View style={styles.errorContainer}>
           <Feather name="alert-circle" size={36} color="#D32F2F" style={styles.errorIcon} />
-          <Text style={styles.errorText}>{errorMessage}</Text>
+          <Text style={styles.errorText}>{typeof errorMessage === 'string' ? errorMessage : 'Error occurred'}</Text>
           <Text style={styles.usernameError}>Username: {username}</Text>
         </View>
       </View>
@@ -72,7 +72,7 @@ const RatingCard = ({
       <View style={styles.ratingContainer}>
         <Text style={styles.ratingLabel}>Rating</Text>
         <Text style={styles.ratingValue}>{rating}</Text>
-        {maxRating && (
+        {maxRating > 0 && (
           <Text style={styles.maxRating}>Max: {maxRating}</Text>
         )}
       </View>
@@ -82,8 +82,8 @@ const RatingCard = ({
         {rank && <Text style={styles.rank}>{rank}</Text>}
       </View>
     </View>
-  )
-}
+  );
+};
 
 export default RatingCard
 
