@@ -13,6 +13,7 @@ import CodeforcesRatingChart from '@/components/charts/CodeforcesRatingChart';
 import CodeforcesProblemTags from '@/components/charts/CodeforcesProblemTags';
 import CodeforcesProblemDifficulty from '@/components/charts/CodeforcesProblemDifficulty';
 import CodechefActivityHeatmap from '@/components/charts/CodechefActivityHeatmap';
+import LeetCodeProgressRings from '@/components/charts/LeetCodeProgressRings';
 
 interface CodechefAPIResponse {
   success: boolean;
@@ -425,7 +426,7 @@ const index = () => {
           {userData.leetcode && (
             <Leetcode userName={userData.leetcode} />
           )}
-
+          
           <View style={styles.cardContainer}>
             <View style={styles.sectionTitleContainer}>
               <Text style={styles.sectionTitle}>Performance Stats</Text>
@@ -440,6 +441,14 @@ const index = () => {
               </View>
             )}
           </View>
+          
+          {/* Add LeetCode Progress Rings component with key for proper remounting */}
+          {userData.leetcode && (
+            <LeetCodeProgressRings 
+              key={`leetcode-rings-${userData.leetcode}`}
+              username={userData.leetcode} 
+            />
+          )}
         </View>
       </ScrollView>
     );
