@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, TouchableOpacity, ImageBackground } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '@/constants/Colors'
 import Codechef from '@/components/codechef/Codechef'
 import Codeforces from '@/components/codeforces/Codeforces'
@@ -18,6 +19,23 @@ const index = () => {
     codechef: ''
   })
   const [ratingsData, setRatingsData] = useState(null);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
+
+  const refreshData = useCallback(() => {
+    setLastRefresh(Date.now());
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshData();
+
+      const intervalId = setInterval(() => {
+        refreshData();
+      }, 5000);
+
+      return () => clearInterval(intervalId);
+    }, [])
+  );
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -27,11 +45,20 @@ const index = () => {
           try {
             const usernames = JSON.parse(storedUsernames);
             if (usernames && typeof usernames === 'object') {
+              const hasChanged = 
+                usernames.codeforces !== userData.codeforces ||
+                usernames.leetcode !== userData.leetcode ||
+                usernames.codechef !== userData.codechef;
+                
               setUserData({
                 codeforces: usernames.codeforces || '',
                 leetcode: usernames.leetcode || '',
                 codechef: usernames.codechef || ''
               });
+              
+              if (hasChanged) {
+                console.log("Usernames have changed, updating ratings data");
+              }
               
               try {
                 const possibilities = [
@@ -124,7 +151,7 @@ const index = () => {
     };
     
     loadUserData();
-  }, []);
+  }, [lastRefresh]);
 
   const renderCodeforcesSection = () => {
     return (

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, Text, ActivityIndicator, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { Colors } from '@/constants/Colors';
+import { Feather } from '@expo/vector-icons';
 
 interface RatingData {
   contestName: string;
@@ -18,7 +19,10 @@ const CodeforcesRatingChart: React.FC<CodeforcesRatingChartProps> = ({ username 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ratingHistory, setRatingHistory] = useState<RatingData[]>([]);
-  
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const scrollViewRef = useRef<ScrollView>(null);
+
   useEffect(() => {
     const fetchRatingData = async () => {
       if (!username) {
@@ -48,7 +52,27 @@ const CodeforcesRatingChart: React.FC<CodeforcesRatingChartProps> = ({ username 
     
     fetchRatingData();
   }, [username]);
-  
+
+  const handleZoomIn = () => {
+    if (zoomLevel < 3) {
+      setZoomLevel(prev => prev + 0.5);
+      setIsZoomed(true);
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (zoomLevel > 1) {
+      const newZoomLevel = Math.max(1, zoomLevel - 0.5);
+      setZoomLevel(newZoomLevel);
+      setIsZoomed(newZoomLevel > 1);
+    }
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setIsZoomed(false);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -73,71 +97,181 @@ const CodeforcesRatingChart: React.FC<CodeforcesRatingChartProps> = ({ username 
       </View>
     );
   }
-  
-  // Prepare data for the chart
+
   const ratings = ratingHistory.map(item => item.newRating);
   const labels = ratingHistory.map((_, index) => {
-    // Show contest number like 1, 5, 10, 15, etc.
-    return (index + 1) % 5 === 0 || index === 0 || index === ratingHistory.length - 1 
+    const interval = ratingHistory.length > 20 ? 
+      (isZoomed ? 5 : 10) : 5;
+    return (index + 1) % interval === 0 || index === 0 || index === ratingHistory.length - 1 
       ? `${index + 1}` 
       : '';
   });
-  
+
+  const baseWidth = Dimensions.get('window').width - 60;
+  const zoomedWidth = baseWidth * zoomLevel;
+  const chartWidth = Math.max(zoomedWidth, ratingHistory.length * 15);
+
   const chartData = {
     labels,
     datasets: [
       {
         data: ratings,
-        color: (opacity = 1) => `rgba(255, 127, 80, ${opacity})`, // Coral color
+        color: (opacity = 1) => `rgba(255, 127, 80, ${opacity})`,
         strokeWidth: 2,
       },
     ],
     legend: [`${username}'s Rating`],
   };
-  
+
   return (
     <View style={styles.container}>
       <View style={styles.chartTitleContainer}>
         <Text style={styles.chartTitle}>Rating History</Text>
       </View>
       
-      <View style={styles.chartContainer}>
-        <LineChart
-          data={chartData}
-          width={Dimensions.get('window').width - 40}
-          height={220}
-          chartConfig={{
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            backgroundGradientFrom: 'rgba(255, 255, 255, 0.9)',
-            backgroundGradientTo: 'rgba(255, 255, 255, 0.9)',
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(0, 106, 78, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-            propsForDots: {
-              r: '5',
-              strokeWidth: '2',
-              stroke: Colors.CORAL,
-            },
-            propsForBackgroundLines: {
-              stroke: 'rgba(0, 0, 0, 0.05)',
-              strokeDasharray: '5, 5',
-            },
-            propsForLabels: {
-              fontFamily: 'Gudea-Regular',
-              fontSize: 10,
-            },
-          }}
-          bezier
-          style={styles.chart}
-          withInnerLines={true}
-          withOuterLines={false}
-          withDots={true}
-          withShadow={true}
-          segments={5}
-        />
+      <View style={styles.zoomControlsContainer}>
+        <TouchableOpacity 
+          style={styles.zoomButton} 
+          onPress={handleZoomOut}
+          disabled={zoomLevel <= 1}
+        >
+          <Feather 
+            name="zoom-out" 
+            size={18} 
+            color={zoomLevel <= 1 ? '#ccc' : Colors.DARK_GREEN} 
+          />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.zoomButton} 
+          onPress={handleResetZoom}
+          disabled={!isZoomed}
+        >
+          <Feather 
+            name="maximize" 
+            size={18} 
+            color={!isZoomed ? '#ccc' : Colors.DARK_GREEN} 
+          />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.zoomButton} 
+          onPress={handleZoomIn}
+          disabled={zoomLevel >= 3}
+        >
+          <Feather 
+            name="zoom-in" 
+            size={18} 
+            color={zoomLevel >= 3 ? '#ccc' : Colors.DARK_GREEN} 
+          />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.chartWithYAxis}>
+        <View style={styles.yAxisLabelContainer}>
+          <Text style={styles.yAxisLabel}>Rating</Text>
+        </View>
+        
+        <View style={styles.chartContainer}>
+          {isZoomed ? (
+            <ScrollView 
+              horizontal 
+              ref={scrollViewRef}
+              showsHorizontalScrollIndicator={true}
+              contentContainerStyle={styles.scrollContent}
+              bounces={false}
+            >
+              <LineChart
+                data={chartData}
+                width={chartWidth}
+                height={220}
+                chartConfig={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  backgroundGradientFrom: 'rgba(255, 255, 255, 0.9)',
+                  backgroundGradientTo: 'rgba(255, 255, 255, 0.9)',
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(0, 106, 78, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  style: {
+                    borderRadius: 16,
+                  },
+                  propsForDots: {
+                    r: '4',
+                    strokeWidth: '2',
+                    stroke: Colors.CORAL,
+                  },
+                  propsForBackgroundLines: {
+                    stroke: 'rgba(0, 0, 0, 0.05)',
+                    strokeDasharray: '5, 5',
+                  },
+                  propsForLabels: {
+                    fontFamily: 'Gudea-Regular',
+                    fontSize: 10,
+                  },
+                  formatYLabel: (value) => `${value}`,
+                }}
+                bezier
+                style={styles.chart}
+                withInnerLines={true}
+                withOuterLines={false}
+                withDots={true}
+                withShadow={true}
+                segments={5}
+                fromZero={false}
+                yAxisLabel=""
+                yAxisSuffix=""
+              />
+            </ScrollView>
+          ) : (
+            <LineChart
+              data={chartData}
+              width={baseWidth}
+              height={220}
+              chartConfig={{
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backgroundGradientFrom: 'rgba(255, 255, 255, 0.9)',
+                backgroundGradientTo: 'rgba(255, 255, 255, 0.9)',
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(0, 106, 78, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: '3',
+                  strokeWidth: '2',
+                  stroke: Colors.CORAL,
+                },
+                propsForBackgroundLines: {
+                  stroke: 'rgba(0, 0, 0, 0.05)',
+                  strokeDasharray: '5, 5',
+                },
+                propsForLabels: {
+                  fontFamily: 'Gudea-Regular',
+                  fontSize: 10,
+                },
+                formatYLabel: (value) => `${value}`,
+              }}
+              bezier
+              style={styles.chart}
+              withInnerLines={true}
+              withOuterLines={false}
+              withDots={true}
+              withShadow={true}
+              segments={5}
+              fromZero={false}
+              yAxisLabel=""
+              yAxisSuffix=""
+            />
+          )}
+        </View>
+      </View>
+      
+      <View style={styles.xAxisLabelContainer}>
+        <Text style={styles.xAxisLabel}>Contest Number</Text>
+        {isZoomed && (
+          <Text style={styles.zoomInstructions}>Scroll horizontally to view all data</Text>
+        )}
       </View>
       
       <View style={styles.statsContainer}>
@@ -235,13 +369,38 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 1,
   },
-  chartContainer: {
+  chartWithYAxis: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'flex-start',
+    marginBottom: 5,
   },
-  chart: {
-    borderRadius: 16,
-    paddingRight: 10,
+  yAxisLabelContainer: {
+    width: 20,
+    height: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  yAxisLabel: {
+    transform: [{ rotate: '-90deg' }],
+    fontSize: 12,
+    fontFamily: 'Gudea-Bold',
+    color: '#555',
+    width: 220,
+    textAlign: 'center',
+  },
+  chartContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  xAxisLabelContainer: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  xAxisLabel: {
+    fontSize: 12,
+    fontFamily: 'Gudea-Bold',
+    color: '#555',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -296,6 +455,35 @@ const styles = StyleSheet.create({
   },
   negative: {
     color: '#F44336',
+  },
+  zoomControlsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  zoomButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 20,
+    marginHorizontal: 10,
+    width: 35,
+    height: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 2,
+  },
+  scrollContent: {
+    paddingRight: 20,
+  },
+  zoomInstructions: {
+    fontSize: 10,
+    fontFamily: 'Gudea-Italic',
+    color: '#777',
+    marginTop: 4,
   },
 });
 
