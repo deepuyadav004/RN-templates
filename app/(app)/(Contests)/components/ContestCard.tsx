@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Contest, CodeforcesContest, CodechefContest, LeetcodeContest } from '../types';
 import { formatStartTime, formatDuration, formatTimeRemaining, getPlatformColors } from '../utils';
@@ -10,6 +10,8 @@ interface ContestCardProps {
 }
 
 const ContestCard: React.FC<ContestCardProps> = ({ item }) => {
+  const [notified, setNotified] = useState(false);
+
   const platform = item.platform;
   const colors = getPlatformColors(platform);
   
@@ -38,6 +40,23 @@ const ContestCard: React.FC<ContestCardProps> = ({ item }) => {
     startTime = contest.startTime;
     duration = contest.duration;
   }
+
+  const handleNotify = () => {
+    setNotified(!notified);
+    if (!notified) {
+      Alert.alert(
+        "Notification Set",
+        `You will be notified before the ${contestName} contest starts.`,
+        [{ text: "OK" }]
+      );
+    } else {
+      Alert.alert(
+        "Notification Removed",
+        `Notification for ${contestName} has been canceled.`,
+        [{ text: "OK" }]
+      );
+    }
+  };
   
   return (
     <TouchableOpacity style={contestStyles.contestCard}>
@@ -73,6 +92,26 @@ const ContestCard: React.FC<ContestCardProps> = ({ item }) => {
           Starts in: {formatTimeRemaining(startTime)}
         </Text>
       </View>
+
+      <TouchableOpacity 
+        style={[
+          contestStyles.notifyButton, 
+          notified ? contestStyles.notifyButtonActive : {}
+        ]} 
+        onPress={handleNotify}
+      >
+        <Ionicons 
+          name={notified ? "notifications" : "notifications-outline"} 
+          size={20} 
+          color={notified ? "#fff" : colors.badge} 
+        />
+        <Text style={[
+          contestStyles.notifyButtonText,
+          notified ? contestStyles.notifyButtonTextActive : { color: colors.badge }
+        ]}>
+          {notified ? "Notifying" : "Notify Me"}
+        </Text>
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 };

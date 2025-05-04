@@ -157,4 +157,29 @@ export const contestStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Gudea-Bold',
   },
+  notifyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(93, 63, 211, 0.3)',
+    backgroundColor: 'rgba(245, 245, 255, 0.7)',
+  },
+  notifyButtonActive: {
+    backgroundColor: 'rgba(93, 63, 211, 0.9)',
+    borderColor: 'rgba(93, 63, 211, 0.9)',
+  },
+  notifyButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Gudea-Bold',
+  },
+  notifyButtonTextActive: {
+    color: '#fff',
+  },
 });
