@@ -11,6 +11,7 @@ import { ScrollView } from 'react-native-gesture-handler'
 import RatingCard from '@/components/ratingCard';
 import CodeforcesRatingChart from '@/components/charts/CodeforcesRatingChart';
 import CodeforcesProblemTags from '@/components/charts/CodeforcesProblemTags';
+import CodeforcesProblemDifficulty from '@/components/charts/CodeforcesProblemDifficulty';
 
 const index = () => {
   const [headerValue, setHeaderValue] = useState("Codeforces")
@@ -183,9 +184,14 @@ const index = () => {
             <CodeforcesRatingChart username={userData.codeforces} />
           )}
           
-          {/* Problem tags distribution chart */}
+          {/* Problem categories chart */}
           {userData.codeforces && (
             <CodeforcesProblemTags username={userData.codeforces} />
+          )}
+          
+          {/* Problem difficulty chart */}
+          {userData.codeforces && (
+            <CodeforcesProblemDifficulty username={userData.codeforces} />
           )}
         </View>
       </ScrollView>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, Dimensions } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
+import { LineChart } from 'react-native-chart-kit';
 import { Colors } from '@/constants/Colors';
 
 interface ProblemSubmission {
@@ -10,18 +10,19 @@ interface ProblemSubmission {
     index: string;
     name: string;
     tags: string[];
+    rating?: number;
   };
   verdict: string;
 }
 
-interface CodeforcesProblemTagsProps {
+interface CodeforcesProblemDifficultyProps {
   username: string;
 }
 
-const CodeforcesProblemTags: React.FC<CodeforcesProblemTagsProps> = ({ username }) => {
+const CodeforcesProblemDifficulty: React.FC<CodeforcesProblemDifficultyProps> = ({ username }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tagStats, setTagStats] = useState<Record<string, number>>({});
+  const [ratingDistribution, setRatingDistribution] = useState<Record<string, number>>({});
   const [totalSolved, setTotalSolved] = useState(0);
 
   useEffect(() => {
@@ -55,7 +56,18 @@ const CodeforcesProblemTags: React.FC<CodeforcesProblemTagsProps> = ({ username 
   
   const processSubmissions = (submissions: ProblemSubmission[]) => {
     const solvedProblems = new Map();
-    const tagCount: Record<string, number> = {};
+    const ratingCount: Record<string, number> = {
+      '800-1000': 0,
+      '1000-1200': 0,
+      '1200-1400': 0,
+      '1400-1600': 0,
+      '1600-1800': 0,
+      '1800-2000': 0,
+      '2000-2200': 0,
+      '2200-2500': 0,
+      '2500+': 0,
+      'Unknown': 0
+    };
     
     submissions.forEach(submission => {
       if (submission.verdict === 'OK') {
@@ -63,16 +75,35 @@ const CodeforcesProblemTags: React.FC<CodeforcesProblemTagsProps> = ({ username 
         if (!solvedProblems.has(problemKey)) {
           solvedProblems.set(problemKey, true);
           
-          if (submission.problem.tags) {
-            submission.problem.tags.forEach(tag => {
-              tagCount[tag] = (tagCount[tag] || 0) + 1;
-            });
+          const rating = submission.problem.rating;
+          if (rating) {
+            if (rating <= 1000) {
+              ratingCount['800-1000']++;
+            } else if (rating <= 1200) {
+              ratingCount['1000-1200']++;
+            } else if (rating <= 1400) {
+              ratingCount['1200-1400']++;
+            } else if (rating <= 1600) {
+              ratingCount['1400-1600']++;
+            } else if (rating <= 1800) {
+              ratingCount['1600-1800']++;
+            } else if (rating <= 2000) {
+              ratingCount['1800-2000']++;
+            } else if (rating <= 2200) {
+              ratingCount['2000-2200']++;
+            } else if (rating <= 2500) {
+              ratingCount['2200-2500']++;
+            } else {
+              ratingCount['2500+']++;
+            }
+          } else {
+            ratingCount['Unknown']++;
           }
         }
       }
     });
     
-    setTagStats(tagCount);
+    setRatingDistribution(ratingCount);
     setTotalSolved(solvedProblems.size);
   };
 
@@ -80,7 +111,7 @@ const CodeforcesProblemTags: React.FC<CodeforcesProblemTagsProps> = ({ username 
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.CORAL} />
-        <Text style={styles.loadingText}>Loading problem statistics...</Text>
+        <Text style={styles.loadingText}>Loading difficulty statistics...</Text>
       </View>
     );
   }
@@ -93,49 +124,64 @@ const CodeforcesProblemTags: React.FC<CodeforcesProblemTagsProps> = ({ username 
     );
   }
   
-  const tagEntries = Object.entries(tagStats);
+  const ratingEntries = Object.entries(ratingDistribution).filter(([_, count]) => count > 0);
   
-  if (tagEntries.length === 0) {
+  if (ratingEntries.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>No solved problems found</Text>
       </View>
     );
   }
+
+  // Prepare data for line chart
+  const prepareLineChartData = () => {
+    // Order difficulties for the chart
+    const orderedDifficulties = [
+      '800-1000', '1000-1200', '1200-1400', '1400-1600',
+      '1600-1800', '1800-2000', '2000-2200', '2200-2500', '2500+'
+    ];
+    
+    // Filter out 'Unknown' and sort the remaining entries
+    const sortedEntries = ratingEntries
+      .filter(([label]) => label !== 'Unknown')
+      .sort((a, b) => {
+        return orderedDifficulties.indexOf(a[0]) - orderedDifficulties.indexOf(b[0]);
+      });
+    
+    return {
+      labels: sortedEntries.map(([label]) => label),
+      datasets: [
+        {
+          data: sortedEntries.map(([_, count]) => count),
+          color: (opacity = 1) => `rgba(255, 127, 80, ${opacity})`, // coral
+          strokeWidth: 2
+        }
+      ],
+      legend: ["Problems Solved"]
+    };
+  };
+
+  const lineData = prepareLineChartData();
   
-  tagEntries.sort((a, b) => b[1] - a[1]);
-  
-  const topTags = tagEntries.slice(0, 10);
-  
-  const labels = topTags.map(() => '');
-  
-  const colors = [
-    '#FF6384', // Pink
-    '#FF9F40', // Orange
-    '#FFCD56', // Yellow
-    '#4BC0C0', // Teal
-    '#36A2EB', // Blue
-    '#9966FF', // Purple
-    '#FF6384', // Pink
-    '#FF9F40', // Orange
-    '#FFCD56', // Yellow
-    '#4BC0C0', // Teal
-  ];
-  
-  const data = {
-    labels,
-    datasets: [
-      {
-        data: topTags.map(([_, count]) => Math.round((count / totalSolved) * 100)),
-        colors: topTags.map((_, i) => (opacity = 1) => colors[i % colors.length]),
-      },
-    ],
+  // Define colors for the legend
+  const ratingColors = {
+    'Unknown': '#AAAAAA',
+    '800-1000': '#CCE2FF', // Newbie
+    '1000-1200': '#77DDBB', // Pupil
+    '1200-1400': '#44CC77', // Specialist
+    '1400-1600': '#3388FF', // Expert
+    '1600-1800': '#AAAA22', // CM
+    '1800-2000': '#FFCC00', // Master
+    '2000-2200': '#FF8800', // IM
+    '2200-2500': '#FF3333', // GM
+    '2500+': '#AA0000', // IGM
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.chartTitleContainer}>
-        <Text style={styles.chartTitle}>Problem Categories</Text>
+        <Text style={styles.chartTitle}>Problems by Difficulty</Text>
       </View>
       
       <View style={styles.statsContainer}>
@@ -145,54 +191,65 @@ const CodeforcesProblemTags: React.FC<CodeforcesProblemTagsProps> = ({ username 
       </View>
       
       <View style={styles.chartContainer}>
-        <BarChart
-          data={data}
+        <LineChart
+          data={lineData}
           width={Dimensions.get('window').width - 40}
           height={220}
-          yAxisSuffix="%"
           chartConfig={{
             backgroundColor: 'rgba(255, 255, 255, 0.9)',
             backgroundGradientFrom: 'rgba(255, 255, 255, 0.9)',
             backgroundGradientTo: 'rgba(255, 255, 255, 0.9)',
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            color: (opacity = 1) => `rgba(0, 106, 78, ${opacity})`,
             labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
             style: {
               borderRadius: 16,
             },
-            barPercentage: 0.8,
+            propsForDots: {
+              r: '6',
+              strokeWidth: '2',
+              stroke: Colors.CORAL,
+            },
             propsForLabels: {
-              fontSize: 0,
-              opacity: 0,
+              fontSize: 10,
+              fontFamily: 'Gudea-Regular',
+              rotation: -45
             },
             propsForBackgroundLines: {
               stroke: 'rgba(0, 0, 0, 0.05)',
               strokeDasharray: '5, 5',
             },
           }}
-          style={styles.chart}
-          showValuesOnTopOfBars={true}
-          fromZero
-          withHorizontalLabels={true}
+          bezier
+          style={{
+            marginVertical: 10,
+            borderRadius: 16,
+          }}
+          withInnerLines={true}
+          withOuterLines={false}
+          withDots={true}
+          withShadow={false}
           segments={5}
-          flatColor={true}
+          fromZero={true}
         />
       </View>
       
       <View style={styles.legendContainer}>
-        <Text style={styles.legendTitle}>Top Problem Categories</Text>
+        <Text style={styles.legendTitle}>Difficulty Distribution</Text>
         <View style={styles.legendGrid}>
-          {topTags.map(([tag, count], index) => (
-            <View key={tag} style={styles.legendItem}>
+          {ratingEntries.map(([label, count]) => (
+            <View key={label} style={styles.legendItem}>
               <View 
                 style={[
                   styles.legendColorBox, 
-                  { backgroundColor: colors[index % colors.length] }
+                  { backgroundColor: ratingColors[label as keyof typeof ratingColors] || '#AAAAAA' }
                 ]} 
               />
               <View style={styles.legendTextContainer}>
-                <Text style={styles.legendTag}>{tag}</Text>
-                <Text style={styles.legendCount}>{count} ({Math.round((count / totalSolved) * 100)}%)</Text>
+                <Text style={styles.legendTag}>{label}</Text>
+                <Text style={styles.legendCount}>
+                  {count} ({Math.round((count / totalSolved) * 100)}%)
+                </Text>
               </View>
             </View>
           ))}
@@ -280,19 +337,17 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 15,
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 12,
-    padding: 10,
+    padding: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
-  },
-  chart: {
-    borderRadius: 16,
-    paddingRight: 0,
+    width: '100%',
   },
   legendContainer: {
     marginTop: 15,
@@ -351,4 +406,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CodeforcesProblemTags;
+export default CodeforcesProblemDifficulty;
