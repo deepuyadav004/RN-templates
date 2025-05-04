@@ -18,6 +18,7 @@ import { homeStyles } from './styles'
 import UserInfoForm from '@/components/forms/UserInfoForm'
 import PlatformCards from '@/components/cards/PlatformCards'
 import getUserContestInfo from '@/api/leetcodeApis/getLCUserInfoByHandle'
+import getCodechefUserInfo from '@/api/codechefApis/getCCUserInfoByHandle'
 
 interface CodeforcesUserInfo {
   handle: string;
@@ -34,6 +35,17 @@ interface LeetcodeUserInfo {
   badge: string;
   globalRanking: number;
   totalParticipants: number;
+}
+
+interface CodechefUserInfo {
+  name: string;
+  currentRating: number;
+  highestRating: number;
+  stars: string;
+  globalRank: number;
+  countryRank: number;
+  profile?: string;
+  countryName?: string;
 }
 
 const index = () => {
@@ -77,7 +89,9 @@ const index = () => {
       rank: "",
       backgroundColor: PLATFORM_DATA.CODECHEF.BACKGROUND_COLOR,
       textColor: PLATFORM_DATA.CODECHEF.TEXT_COLOR,
-      logoUri: PLATFORM_DATA.CODECHEF.LOGO_URI
+      logoUri: PLATFORM_DATA.CODECHEF.LOGO_URI,
+      isError: false,
+      errorMessage: ""
     }
   })
 
@@ -128,7 +142,29 @@ const index = () => {
       return null;
     }
   };
-  
+
+  const fetchCodechefUserInfo = async (username: string): Promise<CodechefUserInfo | null> => {
+    try {
+      const userInfo = await getCodechefUserInfo(username);
+      if (userInfo) {
+        return {
+          name: userInfo.name,
+          currentRating: userInfo.currentRating,
+          highestRating: userInfo.highestRating,
+          stars: userInfo.stars,
+          globalRank: userInfo.globalRank,
+          countryRank: userInfo.countryRank,
+          profile: userInfo.profile,
+          countryName: userInfo.countryName
+        };
+      }
+      throw new Error("Failed to fetch CodeChef user info");
+    } catch (error) {
+      console.error("Error fetching CodeChef user info:", error);
+      return null;
+    }
+  };
+
   const updateCodeforcesData = async (username: string) => {
     try {
       const userInfo = await fetchCodeforcesUserInfo(username);
@@ -231,6 +267,58 @@ const index = () => {
     }
   };
 
+  const updateCodechefData = async (username: string) => {
+    try {
+      const userInfo = await fetchCodechefUserInfo(username);
+      
+      if (userInfo) {
+        setRatingsData(prev => ({
+          ...prev,
+          codechef: {
+            ...prev.codechef,
+            username: username,
+            rating: userInfo.currentRating,
+            maxRating: userInfo.highestRating,
+            rank: userInfo.stars,
+            isError: false,
+            errorMessage: ""
+          }
+        }));
+        return true;
+      } else {
+        // Handle invalid username case
+        setRatingsData(prev => ({
+          ...prev,
+          codechef: {
+            ...prev.codechef,
+            username: username,
+            rating: 0,
+            maxRating: 0,
+            rank: "Invalid",
+            isError: true,
+            errorMessage: "Username not found on CodeChef"
+          }
+        }));
+        return false;
+      }
+    } catch (error) {
+      console.error("Error in updateCodechefData:", error);
+      // Set error state with appropriate message
+      setRatingsData(prev => ({
+        ...prev,
+        codechef: {
+          ...prev.codechef,
+          username: username,
+          rating: 0,
+          maxRating: 0,
+          isError: true,
+          errorMessage: "Failed to fetch CodeChef data. Please try again later."
+        }
+      }));
+      return false;
+    }
+  };
+
   useEffect(() => {
     const checkUsernames = async () => {
       try {
@@ -250,9 +338,6 @@ const index = () => {
             codechef: {
               ...prev.codechef,
               username: usernames.codechef,
-              rating: SAMPLE_DATA.CODECHEF.RATING,
-              maxRating: SAMPLE_DATA.CODECHEF.MAX_RATING,
-              rank: SAMPLE_DATA.CODECHEF.RANK
             }
           }));
           
@@ -278,8 +363,22 @@ const index = () => {
               leetcode: {
                 ...prev.leetcode,
                 rating: SAMPLE_DATA.LEETCODE.RATING,
-                maxRating: 0, // Set to 0 to hide max rating for LeetCode
+                maxRating: 0,
                 rank: SAMPLE_DATA.LEETCODE.RANK
+              }
+            }));
+          }
+          
+          // Fetch CodeChef data
+          const ccSuccess = await updateCodechefData(usernames.codechef);
+          if (!ccSuccess) {
+            setRatingsData(prev => ({
+              ...prev,
+              codechef: {
+                ...prev.codechef,
+                rating: SAMPLE_DATA.CODECHEF.RATING,
+                maxRating: SAMPLE_DATA.CODECHEF.MAX_RATING,
+                rank: SAMPLE_DATA.CODECHEF.RANK
               }
             }));
           }
@@ -365,6 +464,20 @@ const index = () => {
           }
         }));
       }
+
+      // Fetch CodeChef data
+      const ccSuccess = await updateCodechefData(usernames.codechef);
+      if (!ccSuccess) {
+        setRatingsData(prev => ({
+          ...prev,
+          codechef: {
+            ...prev.codechef,
+            rating: SAMPLE_DATA.CODECHEF.RATING,
+            maxRating: SAMPLE_DATA.CODECHEF.MAX_RATING,
+            rank: SAMPLE_DATA.CODECHEF.RANK
+          }
+        }));
+      }
       
       setUsernamesSet(true);
     } catch (error) {
@@ -433,6 +546,20 @@ const index = () => {
             rating: SAMPLE_DATA.LEETCODE.RATING,
             maxRating: 0, // Set to 0 to hide max rating for LeetCode
             rank: SAMPLE_DATA.LEETCODE.RANK
+          }
+        }));
+      }
+
+      // Fetch CodeChef data
+      const ccSuccess = await updateCodechefData(usernames.codechef);
+      if (!ccSuccess) {
+        setRatingsData(prev => ({
+          ...prev,
+          codechef: {
+            ...prev.codechef,
+            rating: SAMPLE_DATA.CODECHEF.RATING,
+            maxRating: SAMPLE_DATA.CODECHEF.MAX_RATING,
+            rank: SAMPLE_DATA.CODECHEF.RANK
           }
         }));
       }
