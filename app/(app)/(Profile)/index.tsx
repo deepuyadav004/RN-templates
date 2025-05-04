@@ -12,6 +12,7 @@ import RatingCard from '@/components/ratingCard';
 import CodeforcesRatingChart from '@/components/charts/CodeforcesRatingChart';
 import CodeforcesProblemTags from '@/components/charts/CodeforcesProblemTags';
 import CodeforcesProblemDifficulty from '@/components/charts/CodeforcesProblemDifficulty';
+import CodechefActivityHeatmap from '@/components/charts/CodechefActivityHeatmap';
 
 const index = () => {
   const [headerValue, setHeaderValue] = useState("Codeforces")
@@ -247,6 +248,11 @@ const index = () => {
               </View>
             )}
           </View>
+          
+          {/* Add CodeChef activity heatmap */}
+          {userData.codechef && (
+            <CodechefActivityHeatmap username={userData.codechef} />
+          )}
         </View>
       </ScrollView>
     );
