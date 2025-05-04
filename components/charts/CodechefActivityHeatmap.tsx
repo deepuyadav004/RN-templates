@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, Dimensions, ScrollView } from 'react-native';
 import { ContributionGraph } from 'react-native-chart-kit';
 import { Colors } from '@/constants/Colors';
@@ -6,6 +6,9 @@ import { LineChart } from 'react-native-chart-kit';
 
 interface CodechefActivityHeatmapProps {
   username: string;
+  existingRatingData?: any;
+  skipDataFetch?: boolean;
+  forceRefresh?: boolean; // New prop
 }
 
 interface ContributionDay {
@@ -41,10 +44,31 @@ interface CodechefUserData {
   ratingData?: RatingDataPoint[];
 }
 
-const CodechefActivityHeatmap: React.FC<CodechefActivityHeatmapProps> = ({ username }) => {
+const CodechefActivityHeatmap: React.FC<CodechefActivityHeatmapProps> = ({ 
+  username, 
+  existingRatingData,
+  skipDataFetch,
+  forceRefresh = false
+}) => {
+  const isMounted = useRef(true);
+  const fetchInProgress = useRef(false);
+  const isInitialMount = useRef(true); // Track initial mount
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<CodechefUserData | null>(null);
+
+  useEffect(() => {
+    isMounted.current = true;
+    isInitialMount.current = true; // Set to true when component mounts
+    
+    return () => {
+      isMounted.current = false;
+      setLoading(true);
+      setError(null);
+      setUserData(null); // Reset states on unmount to prevent stale data
+    };
+  }, []);
 
   useEffect(() => {
     const fetchCodechefActivity = async () => {
@@ -54,26 +78,83 @@ const CodechefActivityHeatmap: React.FC<CodechefActivityHeatmapProps> = ({ usern
         return;
       }
       
+      if (skipDataFetch && !isInitialMount.current && !forceRefresh) {
+        setLoading(false);
+        return;
+      }
+
       try {
+        fetchInProgress.current = true;
         setLoading(true);
-        const response = await fetch(`https://codechef-api.vercel.app/handle/${username}`);
-        const data = await response.json();
         
-        if (data && data.success) {
-          setUserData(data);
+        if (existingRatingData && 
+            existingRatingData.rating !== undefined &&
+            existingRatingData.maxRating !== undefined &&
+            existingRatingData.rank !== undefined) {
+          
+          console.log('Using existing CodeChef rating data:', existingRatingData);
+          
+          const response = await fetch(`https://codechef-api.vercel.app/handle/${username}`);
+          const apiData = await response.json();
+          
+          if (apiData && apiData.success && isMounted.current) {
+            setUserData({
+              ...apiData,
+              currentRating: existingRatingData.rating,
+              highestRating: existingRatingData.maxRating,
+              stars: existingRatingData.rank
+            });
+          } else if (isMounted.current) {
+            setUserData({
+              success: true,
+              status: 200,
+              currentRating: existingRatingData.rating,
+              highestRating: existingRatingData.maxRating,
+              stars: existingRatingData.rank,
+              heatMap: [],
+              globalRank: 0,
+              countryRank: 0
+            });
+          }
         } else {
-          setError('No data available for this user');
+          const response = await fetch(`https://codechef-api.vercel.app/handle/${username}`);
+          const data = await response.json();
+          
+          if (data && data.success && isMounted.current) {
+            setUserData(data);
+          } else if (isMounted.current) {
+            setError('No data available for this user');
+          }
         }
       } catch (err) {
-        setError('Failed to fetch CodeChef data');
-        console.error('Error fetching CodeChef activity:', err);
+        if (existingRatingData && 
+            existingRatingData.rating !== undefined &&
+            existingRatingData.maxRating !== undefined &&
+            isMounted.current) {
+          setUserData({
+            success: true,
+            status: 200,
+            currentRating: existingRatingData.rating,
+            highestRating: existingRatingData.maxRating,
+            stars: existingRatingData.rank || 'N/A',
+            heatMap: [],
+            globalRank: 0,
+            countryRank: 0
+          });
+          setError(null);
+        } else if (isMounted.current) {
+          setError('Failed to fetch CodeChef data');
+          console.error('Error fetching CodeChef activity:', err);
+        }
       } finally {
-        setLoading(false);
+        fetchInProgress.current = false;
+        isInitialMount.current = false; // Mark that initial mount is complete
+        if (isMounted.current) setLoading(false);
       }
     };
     
     fetchCodechefActivity();
-  }, [username]);
+  }, [username, existingRatingData, skipDataFetch, forceRefresh]);
 
   if (loading) {
     return (
@@ -92,7 +173,7 @@ const CodechefActivityHeatmap: React.FC<CodechefActivityHeatmapProps> = ({ usern
     );
   }
   
-  const { heatMap, ratingData, currentRating, highestRating, globalRank, countryRank, stars } = userData;
+  const { heatMap, ratingData, globalRank, countryRank } = userData;
   
   if (!heatMap || heatMap.length === 0) {
     return (
@@ -102,23 +183,20 @@ const CodechefActivityHeatmap: React.FC<CodechefActivityHeatmapProps> = ({ usern
     );
   }
 
-  // Format heatmap data for the component
   const contributionData = heatMap.map(item => ({
     date: item.date,
     count: item.value
   }));
 
-  // Calculate chart width for scrollable view
   const chartWidth = Math.max(Dimensions.get('window').width - 40, 1000);
 
-  // Prepare rating chart data if available
   const hasRatingData = ratingData && ratingData.length > 0;
   const ratingChartData = hasRatingData ? {
     labels: ratingData.slice(-8).map((item, index) => `${index + 1}`),
     datasets: [
       {
         data: ratingData.slice(-8).map(item => parseInt(item.rating)),
-        color: (opacity = 1) => `rgba(104, 66, 115, ${opacity})`, // CodeChef color
+        color: (opacity = 1) => `rgba(104, 66, 115, ${opacity})`,
         strokeWidth: 2,
       },
     ],
@@ -134,31 +212,39 @@ const CodechefActivityHeatmap: React.FC<CodechefActivityHeatmapProps> = ({ usern
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Current Rating</Text>
-          <Text style={styles.statValue}>{currentRating || 'N/A'}</Text>
+          <Text style={styles.statValue}>
+            {existingRatingData?.rating || userData?.currentRating || 'N/A'}
+          </Text>
         </View>
         
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Highest Rating</Text>
-          <Text style={styles.statValue}>{highestRating || 'N/A'}</Text>
+          <Text style={styles.statValue}>
+            {existingRatingData?.maxRating || userData?.highestRating || 'N/A'}
+          </Text>
         </View>
         
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Stars</Text>
-          <Text style={styles.statValue}>{stars || 'N/A'}</Text>
+          <Text style={styles.statValue}>
+            {existingRatingData?.rank || userData?.stars || 'N/A'}
+          </Text>
         </View>
       </View>
       
-      <View style={styles.rankContainer}>
-        <View style={styles.rankItem}>
-          <Text style={styles.rankLabel}>Global Rank</Text>
-          <Text style={styles.rankValue}>{globalRank || 'N/A'}</Text>
+      {(userData?.globalRank || userData?.countryRank) && (
+        <View style={styles.rankContainer}>
+          <View style={styles.rankItem}>
+            <Text style={styles.rankLabel}>Global Rank</Text>
+            <Text style={styles.rankValue}>{userData?.globalRank || 'N/A'}</Text>
+          </View>
+          
+          <View style={styles.rankItem}>
+            <Text style={styles.rankLabel}>Country Rank</Text>
+            <Text style={styles.rankValue}>{userData?.countryRank || 'N/A'}</Text>
+          </View>
         </View>
-        
-        <View style={styles.rankItem}>
-          <Text style={styles.rankLabel}>Country Rank</Text>
-          <Text style={styles.rankValue}>{countryRank || 'N/A'}</Text>
-        </View>
-      </View>
+      )}
       
       {hasRatingData && (
         <View style={styles.chartContainer}>
@@ -200,7 +286,7 @@ const CodechefActivityHeatmap: React.FC<CodechefActivityHeatmapProps> = ({ usern
               backgroundGradientFrom: 'rgba(255, 255, 255, 0.9)',
               backgroundGradientTo: 'rgba(255, 255, 255, 0.9)',
               decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(104, 66, 115, ${opacity})`, // CodeChef purple color
+              color: (opacity = 1) => `rgba(104, 66, 115, ${opacity})`,
               labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
               style: { borderRadius: 16 },
             }}
@@ -323,7 +409,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontFamily: 'Gudea-Bold',
-    color: '#684273', // CodeChef purple
+    color: '#684273',
   },
   rankContainer: {
     flexDirection: 'row',
@@ -346,7 +432,7 @@ const styles = StyleSheet.create({
   rankValue: {
     fontSize: 18,
     fontFamily: 'Gudea-Bold',
-    color: '#684273', // CodeChef purple
+    color: '#684273',
   },
   chartContainer: {
     marginBottom: 20,
@@ -427,4 +513,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CodechefActivityHeatmap;
+export default React.memo(CodechefActivityHeatmap);
