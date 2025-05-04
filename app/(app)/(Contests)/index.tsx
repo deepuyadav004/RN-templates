@@ -288,6 +288,10 @@ const ContestsScreen = () => {
     );
   };
 
+  const ListHeaderComponent = () => (
+    <Text style={styles.title}>Upcoming Contests</Text>
+  );
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -295,8 +299,6 @@ const ContestsScreen = () => {
         style={styles.backgroundImage}
       >
         <View style={styles.overlay}>
-          <Text style={styles.title}>Upcoming Contests</Text>
-          
           {loading && !refreshing ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#5D3FD3" />
@@ -319,6 +321,7 @@ const ContestsScreen = () => {
             <FlatList
               data={contests}
               renderItem={renderContestItem}
+              ListHeaderComponent={ListHeaderComponent}
               keyExtractor={(item) => {
                 if (item.platform === 'codeforces') {
                   return `cf-${(item as CodeforcesContest).id}`;
