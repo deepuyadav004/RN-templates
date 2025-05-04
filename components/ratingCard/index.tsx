@@ -55,7 +55,7 @@ const RatingCard = ({
     );
   }
 
-  // Regular rating card
+  // Regular rating card with improved design
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.headerContainer}>
@@ -70,10 +70,13 @@ const RatingCard = ({
       </View>
 
       <View style={styles.ratingContainer}>
-        <Text style={styles.ratingLabel}>Rating</Text>
+        <Text style={styles.ratingLabel}>Current Rating</Text>
         <Text style={styles.ratingValue}>{rating}</Text>
         {maxRating > 0 && (
-          <Text style={styles.maxRating}>Max: {maxRating}</Text>
+          <View style={styles.maxRatingContainer}>
+            <Text style={styles.maxRatingLabel}>Max:</Text>
+            <Text style={styles.maxRatingValue}>{maxRating}</Text>
+          </View>
         )}
       </View>
 
@@ -89,38 +92,44 @@ export default RatingCard
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 15,
-    padding: 16,
+    borderRadius: 16,
+    padding: 18,
     marginHorizontal: 12,
     marginVertical: 10,
     width: width * 0.85,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 3,
     },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 5,
+    elevation: 6,
   },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 15,
   },
   platformName: {
     fontSize: 22,
     fontFamily: 'Gudea-Bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   logo: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: 8,
   },
   ratingContainer: {
     alignItems: 'center',
-    marginVertical: 12,
+    marginVertical: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    borderRadius: 12,
+    padding: 12,
   },
   ratingLabel: {
     fontSize: 16,
@@ -128,23 +137,34 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   ratingValue: {
-    fontSize: 36,
+    fontSize: 42,
     fontFamily: 'Gudea-Bold',
     color: Colors.DARK_GREEN,
-    marginVertical: 5,
+    marginVertical: 8,
   },
-  maxRating: {
+  maxRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  maxRatingLabel: {
     fontSize: 14,
-    fontFamily: 'Gudea-Italic',
+    fontFamily: 'Gudea-Regular',
     color: '#666',
+    marginRight: 5,
+  },
+  maxRatingValue: {
+    fontSize: 16,
+    fontFamily: 'Gudea-Bold',
+    color: Colors.CORAL,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 8,
+    marginTop: 15,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: 'rgba(0, 0, 0, 0.06)',
   },
   username: {
     fontSize: 16,
@@ -155,6 +175,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Gudea-Bold',
     color: Colors.CORAL,
+    backgroundColor: 'rgba(255, 127, 80, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
   },
   errorContainer: {
     alignItems: 'center',

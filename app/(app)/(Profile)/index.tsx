@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { STORAGE_KEYS } from '@/constants/AppConstants'
 import { ScrollView } from 'react-native-gesture-handler'
 import RatingCard from '@/components/ratingCard';
+import CodeforcesRatingChart from '@/components/charts/CodeforcesRatingChart';
 
 const index = () => {
   const [headerValue, setHeaderValue] = useState("Codeforces")
@@ -31,6 +32,7 @@ const index = () => {
                 leetcode: usernames.leetcode || '',
                 codechef: usernames.codechef || ''
               });
+              
               try {
                 const possibilities = [
                   'platform_ratings_data',
@@ -109,7 +111,7 @@ const index = () => {
                   };
                 }
                 
-                setRatingsData(platformData);
+                setRatingsData(platformData); // Small delay to simulate loading
               }, 500);
             }
           } catch (parseError) {
@@ -132,9 +134,10 @@ const index = () => {
             <Codeforces userName={userData.codeforces} />
           )}
           
+          {/* Performance card */}
           <View style={styles.cardContainer}>
             <View style={styles.sectionTitleContainer}>
-              <Text style={styles.sectionTitle}>Performance Stats</Text>
+              <Text style={styles.sectionTitle}>Current Rating</Text>
             </View>
             {ratingsData && ratingsData.codeforces ? (
               <RatingCard {...ratingsData.codeforces} />
@@ -146,6 +149,11 @@ const index = () => {
               </View>
             )}
           </View>
+          
+          {/* Rating history chart */}
+          {userData.codeforces && (
+            <CodeforcesRatingChart username={userData.codeforces} />
+          )}
         </View>
       </ScrollView>
     );
@@ -308,18 +316,19 @@ const styles = StyleSheet.create({
   sectionTitleContainer: {
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     paddingVertical: 8,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     borderRadius: 20,
     marginBottom: 15,
+    alignSelf: 'center',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Gudea-Bold',
     color: Colors.WHITE,
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
     textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    textShadowRadius: 1,
   },
   placeholderCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
