@@ -15,6 +15,7 @@ const appLayout = () => {
       tabBarInactiveTintColor: '#767676', // Subtle gray for inactive items
       tabBarLabelStyle: styles.tabBarLabel,
       tabBarItemStyle: styles.tabBarItem,
+      headerShown: false, // Hide header for all tabs by default
     }}  >
         <Tabs.Screen name="(Home)" options={{
             headerShown: false, 
@@ -28,7 +29,7 @@ const appLayout = () => {
             title: "Profile",
             tabBarIcon: ({ color }) => <FontAwesome size={24} name="user" color={color} />
             }} />
-        <Tabs.Screen name="(Settings)" options={{
+        <Tabs.Screen name="(Contests)" options={{
             headerShown: false, 
             tabBarLabel: "Contests", 
             title: "Contests",
