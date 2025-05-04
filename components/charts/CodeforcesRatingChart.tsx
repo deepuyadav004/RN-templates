@@ -38,7 +38,6 @@ const CodeforcesRatingChart: React.FC<CodeforcesRatingChartProps> = ({ username 
         
         if (data.status === 'OK' && data.result && data.result.length > 0) {
           setRatingHistory(data.result);
-          setError(null);
         } else {
           setError('No rating data available');
         }
@@ -351,6 +350,7 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
     fontFamily: 'Gudea-Italic',
+    textAlign: 'center',
   },
   chartTitleContainer: {
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -392,6 +392,10 @@ const styles = StyleSheet.create({
   chartContainer: {
     flex: 1,
     alignItems: 'flex-end',
+  },
+  chart: {
+    borderRadius: 16,
+    paddingRight: 0,
   },
   xAxisLabelContainer: {
     alignItems: 'center',

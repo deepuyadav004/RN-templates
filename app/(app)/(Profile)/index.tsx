@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from '@/constants/AppConstants'
 import { ScrollView } from 'react-native-gesture-handler'
 import RatingCard from '@/components/ratingCard';
 import CodeforcesRatingChart from '@/components/charts/CodeforcesRatingChart';
+import CodeforcesProblemTags from '@/components/charts/CodeforcesProblemTags';
 
 const index = () => {
   const [headerValue, setHeaderValue] = useState("Codeforces")
@@ -180,6 +181,11 @@ const index = () => {
           {/* Rating history chart */}
           {userData.codeforces && (
             <CodeforcesRatingChart username={userData.codeforces} />
+          )}
+          
+          {/* Problem tags distribution chart */}
+          {userData.codeforces && (
+            <CodeforcesProblemTags username={userData.codeforces} />
           )}
         </View>
       </ScrollView>
