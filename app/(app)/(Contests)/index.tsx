@@ -3,17 +3,28 @@ import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 
-// Contest interface based on Codeforces API
-interface Contest {
+// Contest interfaces
+interface CodeforcesContest {
   id: number;
   name: string;
   type: string;
   phase: string;
-  frozen: boolean;
   durationSeconds: number;
   startTimeSeconds: number;
-  relativeTimeSeconds: number;
+  platform: 'codeforces';
 }
+
+interface CodechefContest {
+  contest_code: string;
+  contest_name: string;
+  contest_start_date_iso: string;
+  contest_end_date_iso: string;
+  contest_duration: string;
+  platform: 'codechef';
+}
+
+// Combined contest type for our display
+type Contest = CodeforcesContest | CodechefContest;
 
 const ContestsScreen = () => {
   const [contests, setContests] = useState<Contest[]>([]);
@@ -21,27 +32,68 @@ const ContestsScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchContests = async () => {
+  const fetchCodeforces = async (): Promise<CodeforcesContest[]> => {
     try {
-      setLoading(true);
-      setError(null);
-      
       const response = await fetch('https://codeforces.com/api/contest.list');
       const data = await response.json();
       
       if (data.status === 'OK') {
-        // Filter contests with phase "BEFORE" and sort by start time
-        const upcomingContests = data.result
-          .filter((contest: Contest) => contest.phase === 'BEFORE')
-          .sort((a: Contest, b: Contest) => a.startTimeSeconds - b.startTimeSeconds);
-        
-        setContests(upcomingContests);
-      } else {
-        setError('Failed to fetch contests');
+        // Filter contests with phase "BEFORE" and add platform identifier
+        return data.result
+          .filter((contest: any) => contest.phase === 'BEFORE')
+          .map((contest: any) => ({
+            ...contest,
+            platform: 'codeforces'
+          }));
       }
+      return [];
+    } catch (err) {
+      console.error('Error fetching Codeforces contests:', err);
+      return [];
+    }
+  };
+
+  const fetchCodechef = async (): Promise<CodechefContest[]> => {
+    try {
+      const response = await fetch('https://www.codechef.com/api/list/contests/all');
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        // Map future contests and add platform identifier
+        return data.future_contests.map((contest: any) => ({
+          ...contest,
+          platform: 'codechef'
+        }));
+      }
+      return [];
+    } catch (err) {
+      console.error('Error fetching CodeChef contests:', err);
+      return [];
+    }
+  };
+
+  const fetchAllContests = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch contests from both platforms in parallel
+      const [codeforcesContests, codechefContests] = await Promise.all([
+        fetchCodeforces(),
+        fetchCodechef()
+      ]);
+      
+      // Combine and sort all contests by start time
+      const allContests = [...codeforcesContests, ...codechefContests].sort((a, b) => {
+        const timeA = a.platform === 'codeforces' ? a.startTimeSeconds : new Date(a.contest_start_date_iso).getTime() / 1000;
+        const timeB = b.platform === 'codeforces' ? b.startTimeSeconds : new Date(b.contest_start_date_iso).getTime() / 1000;
+        return timeA - timeB;
+      });
+      
+      setContests(allContests);
     } catch (err) {
       console.error('Error fetching contests:', err);
-      setError('Failed to connect to Codeforces API');
+      setError('Failed to fetch contests');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -49,18 +101,18 @@ const ContestsScreen = () => {
   };
 
   useEffect(() => {
-    fetchContests();
+    fetchAllContests();
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchContests();
+    fetchAllContests();
   };
 
   // Convert seconds to days, hours, minutes format
-  const formatTimeRemaining = (startTimeSeconds: number) => {
+  const formatTimeRemaining = (startTime: number) => {
     const now = Math.floor(Date.now() / 1000);
-    const remainingSeconds = startTimeSeconds - now;
+    const remainingSeconds = startTime - now;
     
     if (remainingSeconds <= 0) return 'Starting soon';
     
@@ -71,17 +123,23 @@ const ContestsScreen = () => {
     return `${days}d ${hours}h ${minutes}m`;
   };
 
-  // Format duration from seconds to hours and minutes
-  const formatDuration = (durationSeconds: number) => {
-    const hours = Math.floor(durationSeconds / 3600);
-    const minutes = Math.floor((durationSeconds % 3600) / 60);
+  // Format duration from seconds or minutes to hours and minutes
+  const formatDuration = (duration: number | string, isMinutes = false) => {
+    let durationSecs = typeof duration === 'string' ? parseInt(duration) : duration;
+    if (isMinutes) durationSecs *= 60;
+    
+    const hours = Math.floor(durationSecs / 3600);
+    const minutes = Math.floor((durationSecs % 3600) / 60);
     
     return `${hours}h ${minutes}m`;
   };
 
   // Convert timestamp to readable date and time
-  const formatStartTime = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
+  const formatStartTime = (timestamp: number | string) => {
+    const date = typeof timestamp === 'number' 
+      ? new Date(timestamp * 1000) 
+      : new Date(timestamp);
+      
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -91,36 +149,72 @@ const ContestsScreen = () => {
     });
   };
 
-  const renderContestItem = ({ item }: { item: Contest }) => (
-    <TouchableOpacity style={styles.contestCard}>
-      <View style={styles.contestBadge}>
-        <Text style={styles.contestType}>{item.type}</Text>
-      </View>
+  const getPlatformColors = (platform: string) => {
+    return platform === 'codeforces' 
+      ? { badge: '#5D3FD3', countdown: 'rgba(93, 63, 211, 0.9)' }
+      : { badge: '#EC5B45', countdown: 'rgba(236, 91, 69, 0.9)' };
+  };
+
+  const renderContestItem = ({ item }: { item: Contest }) => {
+    const isCodeforces = item.platform === 'codeforces';
+    const colors = getPlatformColors(item.platform);
+    
+    // Get contest details based on platform
+    const contestName = isCodeforces 
+      ? (item as CodeforcesContest).name 
+      : (item as CodechefContest).contest_name;
       
-      <Text style={styles.contestName}>{item.name}</Text>
+    const contestType = isCodeforces 
+      ? (item as CodeforcesContest).type 
+      : 'CodeChef';
       
-      <View style={styles.timeInfoContainer}>
-        <View style={styles.timeInfoItem}>
-          <Ionicons name="calendar-outline" size={18} color="#5D3FD3" />
-          <Text style={styles.timeInfoText}>{formatStartTime(item.startTimeSeconds)}</Text>
+    const startTime = isCodeforces 
+      ? (item as CodeforcesContest).startTimeSeconds 
+      : new Date((item as CodechefContest).contest_start_date_iso).getTime() / 1000;
+      
+    const duration = isCodeforces 
+      ? (item as CodeforcesContest).durationSeconds 
+      : (item as CodechefContest).contest_duration;
+    
+    return (
+      <TouchableOpacity style={styles.contestCard}>
+        <View style={[styles.contestBadge, { backgroundColor: colors.badge }]}>
+          <Text style={styles.contestType}>{contestType}</Text>
         </View>
         
-        <View style={styles.divider} />
+        <Text style={styles.contestName}>{contestName}</Text>
         
-        <View style={styles.timeInfoItem}>
-          <Ionicons name="time-outline" size={18} color="#5D3FD3" />
-          <Text style={styles.timeInfoText}>{formatDuration(item.durationSeconds)}</Text>
+        <View style={styles.timeInfoContainer}>
+          <View style={styles.timeInfoItem}>
+            <Ionicons name="calendar-outline" size={18} color={colors.badge} />
+            <Text style={styles.timeInfoText}>
+              {isCodeforces 
+                ? formatStartTime((item as CodeforcesContest).startTimeSeconds) 
+                : formatStartTime((item as CodechefContest).contest_start_date_iso)}
+            </Text>
+          </View>
+          
+          <View style={styles.divider} />
+          
+          <View style={styles.timeInfoItem}>
+            <Ionicons name="time-outline" size={18} color={colors.badge} />
+            <Text style={styles.timeInfoText}>
+              {isCodeforces 
+                ? formatDuration((item as CodeforcesContest).durationSeconds) 
+                : formatDuration((item as CodechefContest).contest_duration, true)}
+            </Text>
+          </View>
         </View>
-      </View>
-      
-      <View style={styles.countdownContainer}>
-        <Ionicons name="hourglass-outline" size={20} color="#fff" />
-        <Text style={styles.countdownText}>
-          Starts in: {formatTimeRemaining(item.startTimeSeconds)}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+        
+        <View style={[styles.countdownContainer, { backgroundColor: colors.countdown }]}>
+          <Ionicons name="hourglass-outline" size={20} color="#fff" />
+          <Text style={styles.countdownText}>
+            Starts in: {formatTimeRemaining(startTime)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -140,7 +234,7 @@ const ContestsScreen = () => {
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle-outline" size={40} color="#ff6b6b" />
               <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={fetchContests}>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchAllContests}>
                 <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>
@@ -153,7 +247,11 @@ const ContestsScreen = () => {
             <FlatList
               data={contests}
               renderItem={renderContestItem}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item) => 
+                item.platform === 'codeforces' 
+                  ? `cf-${(item as CodeforcesContest).id}` 
+                  : `cc-${(item as CodechefContest).contest_code}`
+              }
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}
               refreshControl={
