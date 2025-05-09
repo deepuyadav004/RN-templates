@@ -3,7 +3,7 @@ import { PLATFORM_DATA, SAMPLE_DATA } from '@/constants/AppConstants';
 import { RatingsData } from '@/types/platform-interfaces';
 import getCodeforcesUserInfo from '@/api/codeforcesApis/getCFUserInfoByHandle';
 import getLeetcodeUserInfo from '@/api/leetcodeApis/getLCUserInfoByHandle';
-import getCodechefUserInfo from '@/api/codechefApis/getCCUserInfoByHandle';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function usePlatformService() {
   const [ratingsData, setRatingsData] = useState<RatingsData>({
@@ -145,21 +145,46 @@ export default function usePlatformService() {
 
   const updateCodechefData = async (username: string) => {
     try {
-      const userInfo = await getCodechefUserInfo(username);
+      console.log('Fetching fresh CodeChef data for:', username);
       
-      if (userInfo) {
+      // Always fetch directly from API to ensure freshness
+      const response = await fetch(`https://codechef-api.vercel.app/handle/${username}`);
+      const data = await response.json();
+      
+      if (data && data.success) {
         setRatingsData(prev => ({
           ...prev,
           codechef: {
             ...prev.codechef,
             username: username,
-            rating: userInfo.currentRating,
-            maxRating: userInfo.highestRating,
-            rank: userInfo.stars,
+            rating: data.currentRating || 0,
+            maxRating: data.highestRating || 0,
+            rank: data.stars || "",
             isError: false,
             errorMessage: ""
           }
         }));
+        
+        // Store in AsyncStorage for persistence
+        try {
+          const storageData = JSON.stringify({
+            ...ratingsData,
+            codechef: {
+              ...ratingsData.codechef,
+              username: username,
+              rating: data.currentRating || 0,
+              maxRating: data.highestRating || 0,
+              rank: data.stars || "",
+              isError: false,
+              errorMessage: ""
+            }
+          });
+          
+          await AsyncStorage.setItem('RATINGS_DATA', storageData);
+        } catch (storageErr) {
+          console.error('Failed to save CodeChef data to storage:', storageErr);
+        }
+        
         return true;
       } else {
         setRatingsData(prev => ({
