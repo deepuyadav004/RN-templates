@@ -102,4 +102,8 @@ export const profileStyles = StyleSheet.create({
     color: '#555',
     textAlign: 'center',
   },
+  ratingCard: {
+    width: '90%',
+    alignSelf: 'center',
+  },
 });

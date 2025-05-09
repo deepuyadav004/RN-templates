@@ -72,7 +72,7 @@ const RatingCard = ({
       <View style={styles.ratingContainer}>
         <Text style={styles.ratingLabel}>Current Rating</Text>
         <Text style={styles.ratingValue}>{rating}</Text>
-        {maxRating > 0 && (
+        {maxRating > 0 && maxRating !== null && (
           <View style={styles.maxRatingContainer}>
             <Text style={styles.maxRatingLabel}>Max:</Text>
             <Text style={styles.maxRatingValue}>{maxRating}</Text>

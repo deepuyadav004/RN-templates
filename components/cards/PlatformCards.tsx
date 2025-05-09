@@ -12,33 +12,42 @@ interface PlatformCardsProps {
     codechef: any;
   };
   onEditPress: () => void;
+  hideEditButton?: boolean;
 }
 
-const PlatformCards = ({ ratingsData, onEditPress }: PlatformCardsProps) => {
+const PlatformCards = ({ ratingsData, onEditPress, hideEditButton = false }: PlatformCardsProps) => {
   return (
     <>
-      <View style={styles.contentContainer}>
-        <Text style={styles.welcomeText}>Welcome to Coding Stats</Text>
-        <View style={styles.divider} />
-        <Text style={styles.subText}>Track Your Competitive Programming Journey</Text>
-        <TouchableOpacity 
-          style={styles.editButton}
-          onPress={onEditPress}
-        >
-          <Feather name="edit-2" size={UI.ICONS.SIZE.SMALL} color={Colors.WHITE} />
-          <Text style={styles.editButtonText}>Edit Usernames</Text>
-        </TouchableOpacity>
-      </View>
+      {!hideEditButton && (
+        <View style={styles.contentContainer}>
+          <Text style={styles.welcomeText}>Welcome to Coding Stats</Text>
+          <View style={styles.divider} />
+          <Text style={styles.subText}>Track Your Competitive Programming Journey</Text>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={onEditPress}
+          >
+            <Feather name="edit-2" size={UI.ICONS.SIZE.SMALL} color={Colors.WHITE} />
+            <Text style={styles.editButtonText}>Edit Usernames</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-      <View style={styles.cardContainer}>
-        <RatingCard {...ratingsData.codeforces} />
-      </View>
-      <View style={styles.cardContainer}>
-        <RatingCard {...ratingsData.leetcode} />
-      </View>
-      <View style={styles.cardContainer}>
-        <RatingCard {...ratingsData.codechef} />
-      </View>
+      {!ratingsData.codeforces.isHidden && (
+        <View style={styles.cardContainer}>
+          <RatingCard {...ratingsData.codeforces} />
+        </View>
+      )}
+      {!ratingsData.leetcode.isHidden && (
+        <View style={styles.cardContainer}>
+          <RatingCard {...ratingsData.leetcode} />
+        </View>
+      )}
+      {!ratingsData.codechef.isHidden && (
+        <View style={styles.cardContainer}>
+          <RatingCard {...ratingsData.codechef} />
+        </View>
+      )}
     </>
   );
 };

@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ImageBackground, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, Animated, StyleSheet } from 'react-native';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '@/constants/Colors';
@@ -300,5 +300,12 @@ const ProfileScreen = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  ratingCard: {
+    width: '90%', // Adjusted width to match other cards
+    flex: 1,
+  },
+});
 
 export default ProfileScreen;
