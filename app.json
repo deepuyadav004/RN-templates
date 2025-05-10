@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.dpuydv.cpBuddy"
     },
     "web": {
       "bundler": "metro",
@@ -35,6 +36,14 @@
     },
     "assetBundlePatterns": [
       "assets/fonts/*"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "784f02a7-333c-4014-9881-5975b6cffe0f"
+      }
+    }
   }
 }
