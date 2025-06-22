@@ -7,17 +7,27 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleDebug",
-        "buildType": "apk"
-      },
       "ios": {
         "buildConfiguration": "Debug"
+      },
+      "android": {
+        "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_DEBUG_MODE": "true"
       },
       "prebuildCommand": "npx expo prebuild --clean"
+    },
+    "development-simulator": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Debug",
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_DEBUG_MODE": "true"
+      }
     },
     "preview": {
       "distribution": "internal"

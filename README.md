@@ -1,50 +1,244 @@
-# Welcome to your Expo app 👋
+# Competitive Programming Tracker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A comprehensive React Native mobile application built with Expo that allows competitive programmers to track their progress across multiple coding platforms including Codeforces, LeetCode, and CodeChef.
 
-## Get started
+## 📱 Features
 
-1. Install dependencies
+### 🏠 Home Dashboard
+- **Platform Cards**: Visual overview of your performance across all platforms
+- **User Management**: Easy setup and editing of usernames for each platform
+- **Real-time Data**: Fetches latest ratings and statistics from APIs
+- **Beautiful UI**: Modern design with platform-specific theming
 
+### 👤 Profile Analytics
+- **Multi-Platform Support**: Track progress on Codeforces, LeetCode, and CodeChef
+- **Interactive Charts**: 
+  - Codeforces rating progression over time
+  - Problem difficulty distribution
+  - Problem tags analysis
+  - LeetCode contest performance
+  - LeetCode skill statistics with progress rings
+  - CodeChef activity heatmap
+- **Animated Sections**: Smooth transitions between platform views
+- **Data Persistence**: Cached data for offline viewing
+
+### 🏆 Contest Tracker
+- **Upcoming Contests**: Real-time contest listings from all platforms
+- **Smart Notifications**: Automated alerts for upcoming contests
+- **Multi-Platform Integration**: Unified view of contests across platforms
+- **Contest Details**: Start time, duration, and platform information
+- **Refresh Capability**: Pull-to-refresh for latest contest data
+
+## 🛠️ Tech Stack
+
+### Frontend Framework
+- **React Native** (0.74.5) - Cross-platform mobile development
+- **Expo** (~51.0.28) - Development platform and build tools
+- **TypeScript** - Type-safe development
+
+### Navigation & Routing
+- **Expo Router** (~3.5.23) - File-based routing system
+- **React Navigation** (^6.0.2) - Navigation library
+
+### UI & Styling
+- **React Native Reanimated** (~3.10.1) - Advanced animations
+- **React Native Gesture Handler** (~2.16.1) - Touch interactions
+- **Expo Vector Icons** (^14.0.2) - Icon library
+- **Custom Fonts**: Gudea and Overpass font families
+
+### Data Visualization
+- **React Native Chart Kit** (^6.12.0) - Charts and graphs
+- **React Native SVG** (15.2.0) - Custom SVG graphics
+
+### Data Management
+- **AsyncStorage** (1.23.1) - Local data persistence
+- **Expo Notifications** (~0.28.19) - Push notifications
+
+### Development Tools
+- **Jest** - Testing framework
+- **ESLint** - Code linting
+- **Babel** - JavaScript compilation
+
+## 🏗️ Project Structure
+
+```
+📁 app/
+  ├── 📁 (app)/
+  │   ├── 📁 (Home)/          # Home dashboard
+  │   ├── 📁 (Profile)/       # User profile and analytics
+  │   └── 📁 (Contests)/      # Contest tracking
+  └── _layout.tsx             # Root layout
+📁 api/
+  ├── 📁 codeforcesApis/      # Codeforces API integration
+  ├── 📁 leetcodeApis/        # LeetCode API integration
+  └── 📁 codechefApis/        # CodeChef API integration
+📁 components/
+  ├── 📁 charts/              # Data visualization components
+  ├── 📁 cards/               # Platform cards
+  ├── 📁 forms/               # User input forms
+  └── 📁 modals/              # Modal dialogs
+📁 hooks/                     # Custom React hooks
+📁 types/                     # TypeScript interfaces
+📁 constants/                 # App constants and colors
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
+- Expo CLI
+- iOS Simulator (for iOS development)
+- Android Studio/Emulator (for Android development)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd navigation
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. **Start the development server**
    ```bash
-    npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+4. **Run on specific platform**
+   ```bash
+   # iOS
+   npm run ios
+   
+   # Android
+   npm run android
+   
+   # Web
+   npm run web
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📊 API Integrations
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Codeforces API
+- **Endpoint**: `https://codeforces.com/api/user.info`
+- **Data**: User ratings, rankings, contest history
+- **Features**: Real-time rating tracking, problem statistics
 
-## Get a fresh project
+### LeetCode API
+- **Custom endpoints** for user statistics
+- **Data**: Contest ratings, problem solving progress
+- **Features**: Skill analysis, contest performance
 
-When you're ready, run:
+### CodeChef API
+- **User information** and contest data
+- **Data**: Ratings, rankings, activity patterns
+- **Features**: Activity heatmaps, performance tracking
+
+## 🎨 Design Features
+
+### Theme System
+- **Dynamic Color Scheme**: Automatic light/dark mode detection
+- **Platform Branding**: Each platform has distinct visual identity
+- **Consistent Typography**: Custom font integration
+
+### Animations
+- **Smooth Transitions**: React Native Reanimated for fluid UX
+- **Loading States**: Elegant loading indicators
+- **Gesture Handling**: Responsive touch interactions
+
+### Charts & Visualizations
+- **Rating Progression**: Line charts showing rating changes over time
+- **Problem Distribution**: Pie charts for difficulty analysis
+- **Activity Heatmaps**: Calendar-style activity visualization
+- **Progress Rings**: Circular progress indicators for skills
+
+## 📱 Platform Support
+
+- **iOS**: Native iOS app with platform-specific features
+- **Android**: Native Android app with material design
+- **Web**: Progressive web app capability
+
+## 🔧 Configuration
+
+### App Configuration (`app.json`)
+- App name, version, and metadata
+- Platform-specific settings
+- Notification permissions
+- Splash screen and icon configuration
+
+### Environment Setup
+- Expo environment configuration
+- TypeScript configuration
+- ESLint and Jest setup
+
+## 🧪 Testing
 
 ```bash
-npm run reset-project
+# Run tests
+npm test
+
+# Run linting
+npm run lint
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 📦 Building for Production
 
-## Learn more
+### EAS Build (Recommended)
+```bash
+# Install EAS CLI
+npm install -g @expo/eas-cli
 
-To learn more about developing your project with Expo, look at the following resources:
+# Build for all platforms
+eas build --platform all
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Local Build
+```bash
+# iOS
+expo build:ios
 
-## Join the community
+# Android
+expo build:android
+```
 
-Join our community of developers creating universal apps.
+## 🤝 Contributing
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- Codeforces for providing free API access
+- LeetCode for contest and user data
+- CodeChef for platform integration
+- Expo team for excellent development tools
+- React Native community for components and libraries
+
+## 🐛 Known Issues
+
+- Contest notifications may require manual permission setup on some devices
+- API rate limiting may affect frequent data refreshes
+- Some chart animations may be slower on older devices
+
+## 🚧 Future Enhancements
+
+- [ ] Additional platform support (AtCoder, HackerRank)
+- [ ] Advanced analytics and insights
+- [ ] Social features and friend comparisons
+- [ ] Offline mode improvements
+- [ ] Desktop/tablet optimizations
+
+---
+
+**Made with ❤️ for the competitive programming community**
