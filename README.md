@@ -2,6 +2,10 @@
 
 A comprehensive React Native mobile application built with Expo that allows competitive programmers to track their progress across multiple coding platforms including Codeforces, LeetCode, and CodeChef.
 
+## 🎥 Demo Video
+
+📱 **[Watch Demo Video](https://drive.google.com/file/d/1lW3owQIc03v6EQWXaG5Ehd3lz4fYRm8i/view?usp=sharing)** - See the app in action!
+
 ## 📱 Features
 
 ### 🏠 Home Dashboard
